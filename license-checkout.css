@@ -1,10 +1,11 @@
 .pd-activation[hidden],.pd-activation [hidden]{display:none!important}
 .pd-activation{padding-block:32px 64px;scroll-margin-top:100px}
 .pd-activation-card{max-width:680px;margin:auto;padding:36px;border:1px solid #dce4f1;border-radius:24px;background:#fff;box-shadow:0 12px 40px #14233d08;text-align:center;color:#17243b}
-.pd-activation-icon{display:grid;place-items:center;width:52px;height:52px;border-radius:50%;margin:0 auto 18px;background:#edf2ff;color:#235bea}
-.pd-activation-icon svg{width:26px;height:26px;visibility:hidden}
-.pd-activation[data-state=active] .pd-activation-icon{background:#eaf8ef;color:#20844d}
-.pd-activation[data-state=active] .pd-activation-icon svg{visibility:visible}
+.pd-activation-brand{display:flex;justify-content:center;margin:2px auto 24px}
+.pd-activation-logo{position:relative;display:grid;place-items:center;width:72px;height:72px;border:1px solid #dbe5fb;border-radius:22px;background:linear-gradient(145deg,#fff 20%,#e9f0ff);box-shadow:0 12px 28px #173b8020}
+.pd-activation-logo img{display:block;width:42px;height:42px}
+.pd-pro-badge{position:absolute;right:-16px;top:-10px;padding:5px 8px;border:2px solid #fff;border-radius:999px;background:linear-gradient(135deg,#2c66f4,#1747bd);box-shadow:0 5px 12px #173b8030;color:#fff;font-size:9px;font-weight:800;letter-spacing:.12em;line-height:1}
+.pd-activation[data-state=active] .pd-activation-logo::after{content:'✓';position:absolute;left:-9px;bottom:-8px;display:grid;place-items:center;width:25px;height:25px;border:3px solid #fff;border-radius:50%;background:#e6f7ed;color:#198754;font-size:14px;font-weight:800;line-height:1}
 .pd-activation-label{margin:0 0 10px;font-size:11px;font-weight:700;letter-spacing:.14em;color:#235bea}
 .pd-activation h2{margin:0;font-size:clamp(28px,4vw,36px);line-height:1.2;letter-spacing:-.035em}
 .pd-activation-status{margin:12px auto 24px;max-width:460px;font-size:16px;line-height:1.6;color:#56657b}

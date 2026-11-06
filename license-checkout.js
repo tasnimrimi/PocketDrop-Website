@@ -11,7 +11,7 @@
   const section = document.createElement('section'); section.className='wrap pd-activation'; section.hidden=true;
   section.setAttribute('aria-labelledby','pd-activation-title');
   section.innerHTML=`<div class="pd-activation-card">
-    <div class="pd-activation-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4 4L19 6"/></svg></div>
+    <div class="pd-activation-brand" aria-hidden="true"><div class="pd-activation-logo"><img src="assets/logo.svg" alt=""><span class="pd-pro-badge">PRO</span></div></div>
     <p class="pd-activation-label">POCKETDROP PRO</p>
     <h2 id="pd-activation-title">Verifying your payment</h2>
     <p class="pd-activation-status" role="status" aria-live="polite"></p>
@@ -19,7 +19,7 @@
       <div class="pd-recovery-heading"><label for="pd-recovery-key">Your recovery key</label><span>Keep it private</span></div>
       <div class="pd-recovery-controls"><input id="pd-recovery-key" type="password" readonly autocomplete="off" spellcheck="false" aria-label="Private recovery key"><button type="button" class="pd-key-toggle" aria-label="Show recovery key" aria-pressed="false">Show</button><button type="button" class="pd-key-copy">Copy key <span aria-hidden="true">↗</span></button></div>
       <p class="pd-key-feedback" role="status" aria-live="polite"></p>
-      <details><summary>Use Pro on another browser</summary><p>In PocketDrop, open <strong>Get Lifetime Access → Restore Pro</strong> and paste this key.</p></details>
+      <details><summary>Use Pro on another browser</summary><p>In PocketDrop, select <strong>Already purchased? Restore Pro</strong>, then paste this recovery key.</p></details>
     </div>
     <p class="pd-activation-note">Return to PocketDrop to continue.</p>
   </div>`;
