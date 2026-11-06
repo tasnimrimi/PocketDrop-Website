@@ -1,9 +1,9 @@
 // Public checkout configuration only. NEVER put an API key or bank details here.
-// Sandbox checkout. Live payments require the separate production service.
+// Live checkout uses the separate production licensing service.
 window.POCKETDROP_CHECKOUT = Object.freeze({
   enabled: true,
-  environment: 'sandbox',
-  clientToken: 'test_8d05def1e87081859b80177a995',
-  priceId: 'pri_01m6read4swhr50gmg0mrecq8b', // USD 15.59, quantity 1, non-recurring.
-  licenseEndpoint: 'https://pocketdrop-licenses-test.pocketdrop-licensing.workers.dev'
+  environment: 'production',
+  clientToken: 'live_a4aa5a2623870891b98d7670606',
+  priceId: 'pri_01m6rg8vccf8ef8s04fvrqspkh', // USD 15.59, quantity 1, non-recurring.
+  licenseEndpoint: 'https://pocketdrop-licenses-live.pocketdrop-licensing.workers.dev'
 });
