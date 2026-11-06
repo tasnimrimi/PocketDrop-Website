@@ -3873,7 +3873,7 @@ async function addSource(library2, handle) {
   if (handle?.kind !== "file") throw new Error("Choose a file, not a folder.");
   const file = await handle.getFile();
   if (!file.name || file.name.length > 240 || typeof file.type !== "string" || file.type.length > 100) throw new Error("This filename or file type is too long. Rename the file before sending.");
-  if (file.size > PRO_MAX_FILE) throw new Error("This Pro test supports files up to 10 GB.");
+  if (file.size > PRO_MAX_FILE) throw new Error("PocketDrop Pro supports files up to 10 GB.");
   if ((await directSources(library2)).length >= 100) throw new Error("Remove some queued files before adding more.");
   const id = crypto.randomUUID();
   await library2.tx(["keys"], (tx) => tx.objectStore("keys").put({ id: prefix + id, handle, file: { id, name: file.name, type: file.type, size: file.size, lastModified: file.lastModified } }));
@@ -8462,7 +8462,8 @@ if (isPC && LICENSE_CONFIG.enabled) {
   plan.textContent = "Free Plan";
   plan.style.cssText = "display:block;text-align:center;font-size:12px;font-weight:600;color:var(--muted);margin:8px 0";
   document.querySelector(".footer-actions").before(plan);
-  document.querySelector(".pro-preview").hidden = true;
+  const preview = document.querySelector(".pro-preview");
+  if (preview) preview.hidden = true;
   document.querySelector(".lifetime-access").addEventListener("click", (event) => {
     event.preventDefault();
     void (licenceActive ? manageLicense() : openCheckout()).catch((error) => notice(error.message));
@@ -8519,7 +8520,7 @@ function renderPro() {
     if (proMode) {
       $("pc-directory").querySelector("h2").textContent = "Save directly to phone";
       $("choose-directory").textContent = "Choose phone folder";
-      $("privacy-summary").textContent = "Pro test \xB7 Keep this page open to resume";
+      $("privacy-summary").textContent = "PocketDrop Pro \xB7 Keep this page open to resume";
     }
   }
 }
