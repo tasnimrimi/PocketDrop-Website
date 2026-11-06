@@ -34,8 +34,8 @@ function parsePairing(value) {
 }
 
 // src/config.mjs
-var PHONE_PAGE = "https://tasnimrimi.github.io/PocketDrop-Website/phone/";
-var PRO_PHONE_PAGE = "https://tasnimrimi.github.io/PocketDrop-Website/phone/";
+var PHONE_PAGE = "https://tasnimrimi.github.io/PocketDrop-Website/phone/?v=0.10.17";
+var PRO_PHONE_PAGE = "https://tasnimrimi.github.io/PocketDrop-Website/phone/?v=0.10.17";
 
 // src/pc-pairing.mjs
 function parsePCPairing(value) {
