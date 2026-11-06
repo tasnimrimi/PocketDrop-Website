@@ -8436,6 +8436,16 @@ var receiveDirectory;
 var proMode = isPC && PRO_PREVIEW && localStorage.getItem("pro-test") === "true";
 var phoneResume;
 var licenceActive = false;
+function addPlanLabel(text2) {
+  let plan = document.getElementById("license-plan");
+  if (!plan) {
+    plan = document.createElement("span");
+    plan.id = "license-plan";
+    document.querySelector(".footer-actions").before(plan);
+  }
+  plan.textContent = text2;
+  return plan;
+}
 async function refreshLicence() {
   if (!isPC || !LICENSE_CONFIG.enabled) return;
   try {
@@ -8457,11 +8467,7 @@ async function refreshLicence() {
 }
 if (isPC && LICENSE_CONFIG.enabled) {
   proMode = false;
-  const plan = document.createElement("span");
-  plan.id = "license-plan";
-  plan.textContent = "Free Plan";
-  plan.style.cssText = "display:block;text-align:center;font-size:12px;font-weight:600;color:var(--muted);margin:8px 0";
-  document.querySelector(".footer-actions").before(plan);
+  addPlanLabel("Free Plan");
   const preview = document.querySelector(".pro-preview");
   if (preview) preview.hidden = true;
   document.querySelector(".lifetime-access").addEventListener("click", (event) => {
@@ -8503,6 +8509,14 @@ if (isPC && LICENSE_CONFIG.enabled) {
   }, true);
   window.addEventListener("focus", () => void refreshLicence());
 }
+if (!isPC && LICENSE_CONFIG.enabled) {
+  addPlanLabel("Free Plan");
+  const restoreToggle = document.querySelector(".restore-pro-link");
+  restoreToggle.hidden = false;
+  restoreToggle.addEventListener("click", () => {
+    notice("On your computer, open the PocketDrop extension, choose \u201CAlready purchased? Restore Pro,\u201D then paste your recovery key.");
+  });
+}
 function renderPro() {
   const deviceModes = $("device-modes");
   const pcModeButton = $("mode-pc");
@@ -8516,6 +8530,8 @@ function renderPro() {
   $("pair-expiry").textContent = proMode ? "One device \xB7 expires in 24 hours" : "One phone \xB7 expires in 1 hour";
   $("pc-expiry").textContent = proMode ? "Private link \xB7 expires in 24 hours" : "Private link \xB7 expires in 1 hour";
   if (!isPC) {
+    const plan = document.getElementById("license-plan");
+    if (plan) plan.textContent = proMode ? "Pro Plan" : "Free Plan";
     document.body.classList.toggle("pro-phone", proMode);
     if (proMode) {
       $("pc-directory").querySelector("h2").textContent = "Save directly to phone";
