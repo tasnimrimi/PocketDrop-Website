@@ -1,0 +1,9253 @@
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __commonJS = (cb, mod) => function __require() {
+  try {
+    return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+  } catch (e) {
+    throw mod = 0, e;
+  }
+};
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+
+// node_modules/qrcode/lib/can-promise.js
+var require_can_promise = __commonJS({
+  "node_modules/qrcode/lib/can-promise.js"(exports, module) {
+    module.exports = function() {
+      return typeof Promise === "function" && Promise.prototype && Promise.prototype.then;
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/utils.js
+var require_utils = __commonJS({
+  "node_modules/qrcode/lib/core/utils.js"(exports) {
+    var toSJISFunction;
+    var CODEWORDS_COUNT = [
+      0,
+      // Not used
+      26,
+      44,
+      70,
+      100,
+      134,
+      172,
+      196,
+      242,
+      292,
+      346,
+      404,
+      466,
+      532,
+      581,
+      655,
+      733,
+      815,
+      901,
+      991,
+      1085,
+      1156,
+      1258,
+      1364,
+      1474,
+      1588,
+      1706,
+      1828,
+      1921,
+      2051,
+      2185,
+      2323,
+      2465,
+      2611,
+      2761,
+      2876,
+      3034,
+      3196,
+      3362,
+      3532,
+      3706
+    ];
+    exports.getSymbolSize = function getSymbolSize(version) {
+      if (!version) throw new Error('"version" cannot be null or undefined');
+      if (version < 1 || version > 40) throw new Error('"version" should be in range from 1 to 40');
+      return version * 4 + 17;
+    };
+    exports.getSymbolTotalCodewords = function getSymbolTotalCodewords(version) {
+      return CODEWORDS_COUNT[version];
+    };
+    exports.getBCHDigit = function(data) {
+      let digit = 0;
+      while (data !== 0) {
+        digit++;
+        data >>>= 1;
+      }
+      return digit;
+    };
+    exports.setToSJISFunction = function setToSJISFunction(f) {
+      if (typeof f !== "function") {
+        throw new Error('"toSJISFunc" is not a valid function.');
+      }
+      toSJISFunction = f;
+    };
+    exports.isKanjiModeEnabled = function() {
+      return typeof toSJISFunction !== "undefined";
+    };
+    exports.toSJIS = function toSJIS(kanji) {
+      return toSJISFunction(kanji);
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/error-correction-level.js
+var require_error_correction_level = __commonJS({
+  "node_modules/qrcode/lib/core/error-correction-level.js"(exports) {
+    exports.L = { bit: 1 };
+    exports.M = { bit: 0 };
+    exports.Q = { bit: 3 };
+    exports.H = { bit: 2 };
+    function fromString(string) {
+      if (typeof string !== "string") {
+        throw new Error("Param is not a string");
+      }
+      const lcStr = string.toLowerCase();
+      switch (lcStr) {
+        case "l":
+        case "low":
+          return exports.L;
+        case "m":
+        case "medium":
+          return exports.M;
+        case "q":
+        case "quartile":
+          return exports.Q;
+        case "h":
+        case "high":
+          return exports.H;
+        default:
+          throw new Error("Unknown EC Level: " + string);
+      }
+    }
+    exports.isValid = function isValid(level) {
+      return level && typeof level.bit !== "undefined" && level.bit >= 0 && level.bit < 4;
+    };
+    exports.from = function from(value, defaultValue) {
+      if (exports.isValid(value)) {
+        return value;
+      }
+      try {
+        return fromString(value);
+      } catch (e) {
+        return defaultValue;
+      }
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/bit-buffer.js
+var require_bit_buffer = __commonJS({
+  "node_modules/qrcode/lib/core/bit-buffer.js"(exports, module) {
+    function BitBuffer() {
+      this.buffer = [];
+      this.length = 0;
+    }
+    BitBuffer.prototype = {
+      get: function(index) {
+        const bufIndex = Math.floor(index / 8);
+        return (this.buffer[bufIndex] >>> 7 - index % 8 & 1) === 1;
+      },
+      put: function(num, length) {
+        for (let i = 0; i < length; i++) {
+          this.putBit((num >>> length - i - 1 & 1) === 1);
+        }
+      },
+      getLengthInBits: function() {
+        return this.length;
+      },
+      putBit: function(bit) {
+        const bufIndex = Math.floor(this.length / 8);
+        if (this.buffer.length <= bufIndex) {
+          this.buffer.push(0);
+        }
+        if (bit) {
+          this.buffer[bufIndex] |= 128 >>> this.length % 8;
+        }
+        this.length++;
+      }
+    };
+    module.exports = BitBuffer;
+  }
+});
+
+// node_modules/qrcode/lib/core/bit-matrix.js
+var require_bit_matrix = __commonJS({
+  "node_modules/qrcode/lib/core/bit-matrix.js"(exports, module) {
+    function BitMatrix(size) {
+      if (!size || size < 1) {
+        throw new Error("BitMatrix size must be defined and greater than 0");
+      }
+      this.size = size;
+      this.data = new Uint8Array(size * size);
+      this.reservedBit = new Uint8Array(size * size);
+    }
+    BitMatrix.prototype.set = function(row, col, value, reserved) {
+      const index = row * this.size + col;
+      this.data[index] = value;
+      if (reserved) this.reservedBit[index] = true;
+    };
+    BitMatrix.prototype.get = function(row, col) {
+      return this.data[row * this.size + col];
+    };
+    BitMatrix.prototype.xor = function(row, col, value) {
+      this.data[row * this.size + col] ^= value;
+    };
+    BitMatrix.prototype.isReserved = function(row, col) {
+      return this.reservedBit[row * this.size + col];
+    };
+    module.exports = BitMatrix;
+  }
+});
+
+// node_modules/qrcode/lib/core/alignment-pattern.js
+var require_alignment_pattern = __commonJS({
+  "node_modules/qrcode/lib/core/alignment-pattern.js"(exports) {
+    var getSymbolSize = require_utils().getSymbolSize;
+    exports.getRowColCoords = function getRowColCoords(version) {
+      if (version === 1) return [];
+      const posCount = Math.floor(version / 7) + 2;
+      const size = getSymbolSize(version);
+      const intervals = size === 145 ? 26 : Math.ceil((size - 13) / (2 * posCount - 2)) * 2;
+      const positions = [size - 7];
+      for (let i = 1; i < posCount - 1; i++) {
+        positions[i] = positions[i - 1] - intervals;
+      }
+      positions.push(6);
+      return positions.reverse();
+    };
+    exports.getPositions = function getPositions(version) {
+      const coords = [];
+      const pos = exports.getRowColCoords(version);
+      const posLength = pos.length;
+      for (let i = 0; i < posLength; i++) {
+        for (let j = 0; j < posLength; j++) {
+          if (i === 0 && j === 0 || // top-left
+          i === 0 && j === posLength - 1 || // bottom-left
+          i === posLength - 1 && j === 0) {
+            continue;
+          }
+          coords.push([pos[i], pos[j]]);
+        }
+      }
+      return coords;
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/finder-pattern.js
+var require_finder_pattern = __commonJS({
+  "node_modules/qrcode/lib/core/finder-pattern.js"(exports) {
+    var getSymbolSize = require_utils().getSymbolSize;
+    var FINDER_PATTERN_SIZE = 7;
+    exports.getPositions = function getPositions(version) {
+      const size = getSymbolSize(version);
+      return [
+        // top-left
+        [0, 0],
+        // top-right
+        [size - FINDER_PATTERN_SIZE, 0],
+        // bottom-left
+        [0, size - FINDER_PATTERN_SIZE]
+      ];
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/mask-pattern.js
+var require_mask_pattern = __commonJS({
+  "node_modules/qrcode/lib/core/mask-pattern.js"(exports) {
+    exports.Patterns = {
+      PATTERN000: 0,
+      PATTERN001: 1,
+      PATTERN010: 2,
+      PATTERN011: 3,
+      PATTERN100: 4,
+      PATTERN101: 5,
+      PATTERN110: 6,
+      PATTERN111: 7
+    };
+    var PenaltyScores = {
+      N1: 3,
+      N2: 3,
+      N3: 40,
+      N4: 10
+    };
+    exports.isValid = function isValid(mask) {
+      return mask != null && mask !== "" && !isNaN(mask) && mask >= 0 && mask <= 7;
+    };
+    exports.from = function from(value) {
+      return exports.isValid(value) ? parseInt(value, 10) : void 0;
+    };
+    exports.getPenaltyN1 = function getPenaltyN1(data) {
+      const size = data.size;
+      let points = 0;
+      let sameCountCol = 0;
+      let sameCountRow = 0;
+      let lastCol = null;
+      let lastRow = null;
+      for (let row = 0; row < size; row++) {
+        sameCountCol = sameCountRow = 0;
+        lastCol = lastRow = null;
+        for (let col = 0; col < size; col++) {
+          let module2 = data.get(row, col);
+          if (module2 === lastCol) {
+            sameCountCol++;
+          } else {
+            if (sameCountCol >= 5) points += PenaltyScores.N1 + (sameCountCol - 5);
+            lastCol = module2;
+            sameCountCol = 1;
+          }
+          module2 = data.get(col, row);
+          if (module2 === lastRow) {
+            sameCountRow++;
+          } else {
+            if (sameCountRow >= 5) points += PenaltyScores.N1 + (sameCountRow - 5);
+            lastRow = module2;
+            sameCountRow = 1;
+          }
+        }
+        if (sameCountCol >= 5) points += PenaltyScores.N1 + (sameCountCol - 5);
+        if (sameCountRow >= 5) points += PenaltyScores.N1 + (sameCountRow - 5);
+      }
+      return points;
+    };
+    exports.getPenaltyN2 = function getPenaltyN2(data) {
+      const size = data.size;
+      let points = 0;
+      for (let row = 0; row < size - 1; row++) {
+        for (let col = 0; col < size - 1; col++) {
+          const last = data.get(row, col) + data.get(row, col + 1) + data.get(row + 1, col) + data.get(row + 1, col + 1);
+          if (last === 4 || last === 0) points++;
+        }
+      }
+      return points * PenaltyScores.N2;
+    };
+    exports.getPenaltyN3 = function getPenaltyN3(data) {
+      const size = data.size;
+      let points = 0;
+      let bitsCol = 0;
+      let bitsRow = 0;
+      for (let row = 0; row < size; row++) {
+        bitsCol = bitsRow = 0;
+        for (let col = 0; col < size; col++) {
+          bitsCol = bitsCol << 1 & 2047 | data.get(row, col);
+          if (col >= 10 && (bitsCol === 1488 || bitsCol === 93)) points++;
+          bitsRow = bitsRow << 1 & 2047 | data.get(col, row);
+          if (col >= 10 && (bitsRow === 1488 || bitsRow === 93)) points++;
+        }
+      }
+      return points * PenaltyScores.N3;
+    };
+    exports.getPenaltyN4 = function getPenaltyN4(data) {
+      let darkCount = 0;
+      const modulesCount = data.data.length;
+      for (let i = 0; i < modulesCount; i++) darkCount += data.data[i];
+      const k = Math.abs(Math.ceil(darkCount * 100 / modulesCount / 5) - 10);
+      return k * PenaltyScores.N4;
+    };
+    function getMaskAt(maskPattern, i, j) {
+      switch (maskPattern) {
+        case exports.Patterns.PATTERN000:
+          return (i + j) % 2 === 0;
+        case exports.Patterns.PATTERN001:
+          return i % 2 === 0;
+        case exports.Patterns.PATTERN010:
+          return j % 3 === 0;
+        case exports.Patterns.PATTERN011:
+          return (i + j) % 3 === 0;
+        case exports.Patterns.PATTERN100:
+          return (Math.floor(i / 2) + Math.floor(j / 3)) % 2 === 0;
+        case exports.Patterns.PATTERN101:
+          return i * j % 2 + i * j % 3 === 0;
+        case exports.Patterns.PATTERN110:
+          return (i * j % 2 + i * j % 3) % 2 === 0;
+        case exports.Patterns.PATTERN111:
+          return (i * j % 3 + (i + j) % 2) % 2 === 0;
+        default:
+          throw new Error("bad maskPattern:" + maskPattern);
+      }
+    }
+    exports.applyMask = function applyMask(pattern, data) {
+      const size = data.size;
+      for (let col = 0; col < size; col++) {
+        for (let row = 0; row < size; row++) {
+          if (data.isReserved(row, col)) continue;
+          data.xor(row, col, getMaskAt(pattern, row, col));
+        }
+      }
+    };
+    exports.getBestMask = function getBestMask(data, setupFormatFunc) {
+      const numPatterns = Object.keys(exports.Patterns).length;
+      let bestPattern = 0;
+      let lowerPenalty = Infinity;
+      for (let p = 0; p < numPatterns; p++) {
+        setupFormatFunc(p);
+        exports.applyMask(p, data);
+        const penalty = exports.getPenaltyN1(data) + exports.getPenaltyN2(data) + exports.getPenaltyN3(data) + exports.getPenaltyN4(data);
+        exports.applyMask(p, data);
+        if (penalty < lowerPenalty) {
+          lowerPenalty = penalty;
+          bestPattern = p;
+        }
+      }
+      return bestPattern;
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/error-correction-code.js
+var require_error_correction_code = __commonJS({
+  "node_modules/qrcode/lib/core/error-correction-code.js"(exports) {
+    var ECLevel = require_error_correction_level();
+    var EC_BLOCKS_TABLE = [
+      // L  M  Q  H
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      2,
+      2,
+      1,
+      2,
+      2,
+      4,
+      1,
+      2,
+      4,
+      4,
+      2,
+      4,
+      4,
+      4,
+      2,
+      4,
+      6,
+      5,
+      2,
+      4,
+      6,
+      6,
+      2,
+      5,
+      8,
+      8,
+      4,
+      5,
+      8,
+      8,
+      4,
+      5,
+      8,
+      11,
+      4,
+      8,
+      10,
+      11,
+      4,
+      9,
+      12,
+      16,
+      4,
+      9,
+      16,
+      16,
+      6,
+      10,
+      12,
+      18,
+      6,
+      10,
+      17,
+      16,
+      6,
+      11,
+      16,
+      19,
+      6,
+      13,
+      18,
+      21,
+      7,
+      14,
+      21,
+      25,
+      8,
+      16,
+      20,
+      25,
+      8,
+      17,
+      23,
+      25,
+      9,
+      17,
+      23,
+      34,
+      9,
+      18,
+      25,
+      30,
+      10,
+      20,
+      27,
+      32,
+      12,
+      21,
+      29,
+      35,
+      12,
+      23,
+      34,
+      37,
+      12,
+      25,
+      34,
+      40,
+      13,
+      26,
+      35,
+      42,
+      14,
+      28,
+      38,
+      45,
+      15,
+      29,
+      40,
+      48,
+      16,
+      31,
+      43,
+      51,
+      17,
+      33,
+      45,
+      54,
+      18,
+      35,
+      48,
+      57,
+      19,
+      37,
+      51,
+      60,
+      19,
+      38,
+      53,
+      63,
+      20,
+      40,
+      56,
+      66,
+      21,
+      43,
+      59,
+      70,
+      22,
+      45,
+      62,
+      74,
+      24,
+      47,
+      65,
+      77,
+      25,
+      49,
+      68,
+      81
+    ];
+    var EC_CODEWORDS_TABLE = [
+      // L  M  Q  H
+      7,
+      10,
+      13,
+      17,
+      10,
+      16,
+      22,
+      28,
+      15,
+      26,
+      36,
+      44,
+      20,
+      36,
+      52,
+      64,
+      26,
+      48,
+      72,
+      88,
+      36,
+      64,
+      96,
+      112,
+      40,
+      72,
+      108,
+      130,
+      48,
+      88,
+      132,
+      156,
+      60,
+      110,
+      160,
+      192,
+      72,
+      130,
+      192,
+      224,
+      80,
+      150,
+      224,
+      264,
+      96,
+      176,
+      260,
+      308,
+      104,
+      198,
+      288,
+      352,
+      120,
+      216,
+      320,
+      384,
+      132,
+      240,
+      360,
+      432,
+      144,
+      280,
+      408,
+      480,
+      168,
+      308,
+      448,
+      532,
+      180,
+      338,
+      504,
+      588,
+      196,
+      364,
+      546,
+      650,
+      224,
+      416,
+      600,
+      700,
+      224,
+      442,
+      644,
+      750,
+      252,
+      476,
+      690,
+      816,
+      270,
+      504,
+      750,
+      900,
+      300,
+      560,
+      810,
+      960,
+      312,
+      588,
+      870,
+      1050,
+      336,
+      644,
+      952,
+      1110,
+      360,
+      700,
+      1020,
+      1200,
+      390,
+      728,
+      1050,
+      1260,
+      420,
+      784,
+      1140,
+      1350,
+      450,
+      812,
+      1200,
+      1440,
+      480,
+      868,
+      1290,
+      1530,
+      510,
+      924,
+      1350,
+      1620,
+      540,
+      980,
+      1440,
+      1710,
+      570,
+      1036,
+      1530,
+      1800,
+      570,
+      1064,
+      1590,
+      1890,
+      600,
+      1120,
+      1680,
+      1980,
+      630,
+      1204,
+      1770,
+      2100,
+      660,
+      1260,
+      1860,
+      2220,
+      720,
+      1316,
+      1950,
+      2310,
+      750,
+      1372,
+      2040,
+      2430
+    ];
+    exports.getBlocksCount = function getBlocksCount(version, errorCorrectionLevel) {
+      switch (errorCorrectionLevel) {
+        case ECLevel.L:
+          return EC_BLOCKS_TABLE[(version - 1) * 4 + 0];
+        case ECLevel.M:
+          return EC_BLOCKS_TABLE[(version - 1) * 4 + 1];
+        case ECLevel.Q:
+          return EC_BLOCKS_TABLE[(version - 1) * 4 + 2];
+        case ECLevel.H:
+          return EC_BLOCKS_TABLE[(version - 1) * 4 + 3];
+        default:
+          return void 0;
+      }
+    };
+    exports.getTotalCodewordsCount = function getTotalCodewordsCount(version, errorCorrectionLevel) {
+      switch (errorCorrectionLevel) {
+        case ECLevel.L:
+          return EC_CODEWORDS_TABLE[(version - 1) * 4 + 0];
+        case ECLevel.M:
+          return EC_CODEWORDS_TABLE[(version - 1) * 4 + 1];
+        case ECLevel.Q:
+          return EC_CODEWORDS_TABLE[(version - 1) * 4 + 2];
+        case ECLevel.H:
+          return EC_CODEWORDS_TABLE[(version - 1) * 4 + 3];
+        default:
+          return void 0;
+      }
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/galois-field.js
+var require_galois_field = __commonJS({
+  "node_modules/qrcode/lib/core/galois-field.js"(exports) {
+    var EXP_TABLE = new Uint8Array(512);
+    var LOG_TABLE = new Uint8Array(256);
+    (function initTables() {
+      let x = 1;
+      for (let i = 0; i < 255; i++) {
+        EXP_TABLE[i] = x;
+        LOG_TABLE[x] = i;
+        x <<= 1;
+        if (x & 256) {
+          x ^= 285;
+        }
+      }
+      for (let i = 255; i < 512; i++) {
+        EXP_TABLE[i] = EXP_TABLE[i - 255];
+      }
+    })();
+    exports.log = function log2(n) {
+      if (n < 1) throw new Error("log(" + n + ")");
+      return LOG_TABLE[n];
+    };
+    exports.exp = function exp(n) {
+      return EXP_TABLE[n];
+    };
+    exports.mul = function mul(x, y) {
+      if (x === 0 || y === 0) return 0;
+      return EXP_TABLE[LOG_TABLE[x] + LOG_TABLE[y]];
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/polynomial.js
+var require_polynomial = __commonJS({
+  "node_modules/qrcode/lib/core/polynomial.js"(exports) {
+    var GF = require_galois_field();
+    exports.mul = function mul(p1, p2) {
+      const coeff = new Uint8Array(p1.length + p2.length - 1);
+      for (let i = 0; i < p1.length; i++) {
+        for (let j = 0; j < p2.length; j++) {
+          coeff[i + j] ^= GF.mul(p1[i], p2[j]);
+        }
+      }
+      return coeff;
+    };
+    exports.mod = function mod(divident, divisor) {
+      let result = new Uint8Array(divident);
+      while (result.length - divisor.length >= 0) {
+        const coeff = result[0];
+        for (let i = 0; i < divisor.length; i++) {
+          result[i] ^= GF.mul(divisor[i], coeff);
+        }
+        let offset = 0;
+        while (offset < result.length && result[offset] === 0) offset++;
+        result = result.slice(offset);
+      }
+      return result;
+    };
+    exports.generateECPolynomial = function generateECPolynomial(degree) {
+      let poly = new Uint8Array([1]);
+      for (let i = 0; i < degree; i++) {
+        poly = exports.mul(poly, new Uint8Array([1, GF.exp(i)]));
+      }
+      return poly;
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/reed-solomon-encoder.js
+var require_reed_solomon_encoder = __commonJS({
+  "node_modules/qrcode/lib/core/reed-solomon-encoder.js"(exports, module) {
+    var Polynomial = require_polynomial();
+    function ReedSolomonEncoder(degree) {
+      this.genPoly = void 0;
+      this.degree = degree;
+      if (this.degree) this.initialize(this.degree);
+    }
+    ReedSolomonEncoder.prototype.initialize = function initialize(degree) {
+      this.degree = degree;
+      this.genPoly = Polynomial.generateECPolynomial(this.degree);
+    };
+    ReedSolomonEncoder.prototype.encode = function encode2(data) {
+      if (!this.genPoly) {
+        throw new Error("Encoder not initialized");
+      }
+      const paddedData = new Uint8Array(data.length + this.degree);
+      paddedData.set(data);
+      const remainder = Polynomial.mod(paddedData, this.genPoly);
+      const start2 = this.degree - remainder.length;
+      if (start2 > 0) {
+        const buff = new Uint8Array(this.degree);
+        buff.set(remainder, start2);
+        return buff;
+      }
+      return remainder;
+    };
+    module.exports = ReedSolomonEncoder;
+  }
+});
+
+// node_modules/qrcode/lib/core/version-check.js
+var require_version_check = __commonJS({
+  "node_modules/qrcode/lib/core/version-check.js"(exports) {
+    exports.isValid = function isValid(version) {
+      return !isNaN(version) && version >= 1 && version <= 40;
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/regex.js
+var require_regex = __commonJS({
+  "node_modules/qrcode/lib/core/regex.js"(exports) {
+    var numeric = "[0-9]+";
+    var alphanumeric = "[A-Z $%*+\\-./:]+";
+    var kanji = "(?:[u3000-u303F]|[u3040-u309F]|[u30A0-u30FF]|[uFF00-uFFEF]|[u4E00-u9FAF]|[u2605-u2606]|[u2190-u2195]|u203B|[u2010u2015u2018u2019u2025u2026u201Cu201Du2225u2260]|[u0391-u0451]|[u00A7u00A8u00B1u00B4u00D7u00F7])+";
+    kanji = kanji.replace(/u/g, "\\u");
+    var byte = "(?:(?![A-Z0-9 $%*+\\-./:]|" + kanji + ")(?:.|[\r\n]))+";
+    exports.KANJI = new RegExp(kanji, "g");
+    exports.BYTE_KANJI = new RegExp("[^A-Z0-9 $%*+\\-./:]+", "g");
+    exports.BYTE = new RegExp(byte, "g");
+    exports.NUMERIC = new RegExp(numeric, "g");
+    exports.ALPHANUMERIC = new RegExp(alphanumeric, "g");
+    var TEST_KANJI = new RegExp("^" + kanji + "$");
+    var TEST_NUMERIC = new RegExp("^" + numeric + "$");
+    var TEST_ALPHANUMERIC = new RegExp("^[A-Z0-9 $%*+\\-./:]+$");
+    exports.testKanji = function testKanji(str) {
+      return TEST_KANJI.test(str);
+    };
+    exports.testNumeric = function testNumeric(str) {
+      return TEST_NUMERIC.test(str);
+    };
+    exports.testAlphanumeric = function testAlphanumeric(str) {
+      return TEST_ALPHANUMERIC.test(str);
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/mode.js
+var require_mode = __commonJS({
+  "node_modules/qrcode/lib/core/mode.js"(exports) {
+    var VersionCheck = require_version_check();
+    var Regex = require_regex();
+    exports.NUMERIC = {
+      id: "Numeric",
+      bit: 1 << 0,
+      ccBits: [10, 12, 14]
+    };
+    exports.ALPHANUMERIC = {
+      id: "Alphanumeric",
+      bit: 1 << 1,
+      ccBits: [9, 11, 13]
+    };
+    exports.BYTE = {
+      id: "Byte",
+      bit: 1 << 2,
+      ccBits: [8, 16, 16]
+    };
+    exports.KANJI = {
+      id: "Kanji",
+      bit: 1 << 3,
+      ccBits: [8, 10, 12]
+    };
+    exports.MIXED = {
+      bit: -1
+    };
+    exports.getCharCountIndicator = function getCharCountIndicator(mode, version) {
+      if (!mode.ccBits) throw new Error("Invalid mode: " + mode);
+      if (!VersionCheck.isValid(version)) {
+        throw new Error("Invalid version: " + version);
+      }
+      if (version >= 1 && version < 10) return mode.ccBits[0];
+      else if (version < 27) return mode.ccBits[1];
+      return mode.ccBits[2];
+    };
+    exports.getBestModeForData = function getBestModeForData(dataStr) {
+      if (Regex.testNumeric(dataStr)) return exports.NUMERIC;
+      else if (Regex.testAlphanumeric(dataStr)) return exports.ALPHANUMERIC;
+      else if (Regex.testKanji(dataStr)) return exports.KANJI;
+      else return exports.BYTE;
+    };
+    exports.toString = function toString(mode) {
+      if (mode && mode.id) return mode.id;
+      throw new Error("Invalid mode");
+    };
+    exports.isValid = function isValid(mode) {
+      return mode && mode.bit && mode.ccBits;
+    };
+    function fromString(string) {
+      if (typeof string !== "string") {
+        throw new Error("Param is not a string");
+      }
+      const lcStr = string.toLowerCase();
+      switch (lcStr) {
+        case "numeric":
+          return exports.NUMERIC;
+        case "alphanumeric":
+          return exports.ALPHANUMERIC;
+        case "kanji":
+          return exports.KANJI;
+        case "byte":
+          return exports.BYTE;
+        default:
+          throw new Error("Unknown mode: " + string);
+      }
+    }
+    exports.from = function from(value, defaultValue) {
+      if (exports.isValid(value)) {
+        return value;
+      }
+      try {
+        return fromString(value);
+      } catch (e) {
+        return defaultValue;
+      }
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/version.js
+var require_version = __commonJS({
+  "node_modules/qrcode/lib/core/version.js"(exports) {
+    var Utils = require_utils();
+    var ECCode = require_error_correction_code();
+    var ECLevel = require_error_correction_level();
+    var Mode = require_mode();
+    var VersionCheck = require_version_check();
+    var G18 = 1 << 12 | 1 << 11 | 1 << 10 | 1 << 9 | 1 << 8 | 1 << 5 | 1 << 2 | 1 << 0;
+    var G18_BCH = Utils.getBCHDigit(G18);
+    function getBestVersionForDataLength(mode, length, errorCorrectionLevel) {
+      for (let currentVersion = 1; currentVersion <= 40; currentVersion++) {
+        if (length <= exports.getCapacity(currentVersion, errorCorrectionLevel, mode)) {
+          return currentVersion;
+        }
+      }
+      return void 0;
+    }
+    function getReservedBitsCount(mode, version) {
+      return Mode.getCharCountIndicator(mode, version) + 4;
+    }
+    function getTotalBitsFromDataArray(segments, version) {
+      let totalBits = 0;
+      segments.forEach(function(data) {
+        const reservedBits = getReservedBitsCount(data.mode, version);
+        totalBits += reservedBits + data.getBitsLength();
+      });
+      return totalBits;
+    }
+    function getBestVersionForMixedData(segments, errorCorrectionLevel) {
+      for (let currentVersion = 1; currentVersion <= 40; currentVersion++) {
+        const length = getTotalBitsFromDataArray(segments, currentVersion);
+        if (length <= exports.getCapacity(currentVersion, errorCorrectionLevel, Mode.MIXED)) {
+          return currentVersion;
+        }
+      }
+      return void 0;
+    }
+    exports.from = function from(value, defaultValue) {
+      if (VersionCheck.isValid(value)) {
+        return parseInt(value, 10);
+      }
+      return defaultValue;
+    };
+    exports.getCapacity = function getCapacity(version, errorCorrectionLevel, mode) {
+      if (!VersionCheck.isValid(version)) {
+        throw new Error("Invalid QR Code version");
+      }
+      if (typeof mode === "undefined") mode = Mode.BYTE;
+      const totalCodewords = Utils.getSymbolTotalCodewords(version);
+      const ecTotalCodewords = ECCode.getTotalCodewordsCount(version, errorCorrectionLevel);
+      const dataTotalCodewordsBits = (totalCodewords - ecTotalCodewords) * 8;
+      if (mode === Mode.MIXED) return dataTotalCodewordsBits;
+      const usableBits = dataTotalCodewordsBits - getReservedBitsCount(mode, version);
+      switch (mode) {
+        case Mode.NUMERIC:
+          return Math.floor(usableBits / 10 * 3);
+        case Mode.ALPHANUMERIC:
+          return Math.floor(usableBits / 11 * 2);
+        case Mode.KANJI:
+          return Math.floor(usableBits / 13);
+        case Mode.BYTE:
+        default:
+          return Math.floor(usableBits / 8);
+      }
+    };
+    exports.getBestVersionForData = function getBestVersionForData(data, errorCorrectionLevel) {
+      let seg;
+      const ecl = ECLevel.from(errorCorrectionLevel, ECLevel.M);
+      if (Array.isArray(data)) {
+        if (data.length > 1) {
+          return getBestVersionForMixedData(data, ecl);
+        }
+        if (data.length === 0) {
+          return 1;
+        }
+        seg = data[0];
+      } else {
+        seg = data;
+      }
+      return getBestVersionForDataLength(seg.mode, seg.getLength(), ecl);
+    };
+    exports.getEncodedBits = function getEncodedBits(version) {
+      if (!VersionCheck.isValid(version) || version < 7) {
+        throw new Error("Invalid QR Code version");
+      }
+      let d = version << 12;
+      while (Utils.getBCHDigit(d) - G18_BCH >= 0) {
+        d ^= G18 << Utils.getBCHDigit(d) - G18_BCH;
+      }
+      return version << 12 | d;
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/format-info.js
+var require_format_info = __commonJS({
+  "node_modules/qrcode/lib/core/format-info.js"(exports) {
+    var Utils = require_utils();
+    var G15 = 1 << 10 | 1 << 8 | 1 << 5 | 1 << 4 | 1 << 2 | 1 << 1 | 1 << 0;
+    var G15_MASK = 1 << 14 | 1 << 12 | 1 << 10 | 1 << 4 | 1 << 1;
+    var G15_BCH = Utils.getBCHDigit(G15);
+    exports.getEncodedBits = function getEncodedBits(errorCorrectionLevel, mask) {
+      const data = errorCorrectionLevel.bit << 3 | mask;
+      let d = data << 10;
+      while (Utils.getBCHDigit(d) - G15_BCH >= 0) {
+        d ^= G15 << Utils.getBCHDigit(d) - G15_BCH;
+      }
+      return (data << 10 | d) ^ G15_MASK;
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/numeric-data.js
+var require_numeric_data = __commonJS({
+  "node_modules/qrcode/lib/core/numeric-data.js"(exports, module) {
+    var Mode = require_mode();
+    function NumericData(data) {
+      this.mode = Mode.NUMERIC;
+      this.data = data.toString();
+    }
+    NumericData.getBitsLength = function getBitsLength(length) {
+      return 10 * Math.floor(length / 3) + (length % 3 ? length % 3 * 3 + 1 : 0);
+    };
+    NumericData.prototype.getLength = function getLength() {
+      return this.data.length;
+    };
+    NumericData.prototype.getBitsLength = function getBitsLength() {
+      return NumericData.getBitsLength(this.data.length);
+    };
+    NumericData.prototype.write = function write(bitBuffer) {
+      let i, group, value;
+      for (i = 0; i + 3 <= this.data.length; i += 3) {
+        group = this.data.substr(i, 3);
+        value = parseInt(group, 10);
+        bitBuffer.put(value, 10);
+      }
+      const remainingNum = this.data.length - i;
+      if (remainingNum > 0) {
+        group = this.data.substr(i);
+        value = parseInt(group, 10);
+        bitBuffer.put(value, remainingNum * 3 + 1);
+      }
+    };
+    module.exports = NumericData;
+  }
+});
+
+// node_modules/qrcode/lib/core/alphanumeric-data.js
+var require_alphanumeric_data = __commonJS({
+  "node_modules/qrcode/lib/core/alphanumeric-data.js"(exports, module) {
+    var Mode = require_mode();
+    var ALPHA_NUM_CHARS = [
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H",
+      "I",
+      "J",
+      "K",
+      "L",
+      "M",
+      "N",
+      "O",
+      "P",
+      "Q",
+      "R",
+      "S",
+      "T",
+      "U",
+      "V",
+      "W",
+      "X",
+      "Y",
+      "Z",
+      " ",
+      "$",
+      "%",
+      "*",
+      "+",
+      "-",
+      ".",
+      "/",
+      ":"
+    ];
+    function AlphanumericData(data) {
+      this.mode = Mode.ALPHANUMERIC;
+      this.data = data;
+    }
+    AlphanumericData.getBitsLength = function getBitsLength(length) {
+      return 11 * Math.floor(length / 2) + 6 * (length % 2);
+    };
+    AlphanumericData.prototype.getLength = function getLength() {
+      return this.data.length;
+    };
+    AlphanumericData.prototype.getBitsLength = function getBitsLength() {
+      return AlphanumericData.getBitsLength(this.data.length);
+    };
+    AlphanumericData.prototype.write = function write(bitBuffer) {
+      let i;
+      for (i = 0; i + 2 <= this.data.length; i += 2) {
+        let value = ALPHA_NUM_CHARS.indexOf(this.data[i]) * 45;
+        value += ALPHA_NUM_CHARS.indexOf(this.data[i + 1]);
+        bitBuffer.put(value, 11);
+      }
+      if (this.data.length % 2) {
+        bitBuffer.put(ALPHA_NUM_CHARS.indexOf(this.data[i]), 6);
+      }
+    };
+    module.exports = AlphanumericData;
+  }
+});
+
+// node_modules/qrcode/lib/core/byte-data.js
+var require_byte_data = __commonJS({
+  "node_modules/qrcode/lib/core/byte-data.js"(exports, module) {
+    var Mode = require_mode();
+    function ByteData(data) {
+      this.mode = Mode.BYTE;
+      if (typeof data === "string") {
+        this.data = new TextEncoder().encode(data);
+      } else {
+        this.data = new Uint8Array(data);
+      }
+    }
+    ByteData.getBitsLength = function getBitsLength(length) {
+      return length * 8;
+    };
+    ByteData.prototype.getLength = function getLength() {
+      return this.data.length;
+    };
+    ByteData.prototype.getBitsLength = function getBitsLength() {
+      return ByteData.getBitsLength(this.data.length);
+    };
+    ByteData.prototype.write = function(bitBuffer) {
+      for (let i = 0, l = this.data.length; i < l; i++) {
+        bitBuffer.put(this.data[i], 8);
+      }
+    };
+    module.exports = ByteData;
+  }
+});
+
+// node_modules/qrcode/lib/core/kanji-data.js
+var require_kanji_data = __commonJS({
+  "node_modules/qrcode/lib/core/kanji-data.js"(exports, module) {
+    var Mode = require_mode();
+    var Utils = require_utils();
+    function KanjiData(data) {
+      this.mode = Mode.KANJI;
+      this.data = data;
+    }
+    KanjiData.getBitsLength = function getBitsLength(length) {
+      return length * 13;
+    };
+    KanjiData.prototype.getLength = function getLength() {
+      return this.data.length;
+    };
+    KanjiData.prototype.getBitsLength = function getBitsLength() {
+      return KanjiData.getBitsLength(this.data.length);
+    };
+    KanjiData.prototype.write = function(bitBuffer) {
+      let i;
+      for (i = 0; i < this.data.length; i++) {
+        let value = Utils.toSJIS(this.data[i]);
+        if (value >= 33088 && value <= 40956) {
+          value -= 33088;
+        } else if (value >= 57408 && value <= 60351) {
+          value -= 49472;
+        } else {
+          throw new Error(
+            "Invalid SJIS character: " + this.data[i] + "\nMake sure your charset is UTF-8"
+          );
+        }
+        value = (value >>> 8 & 255) * 192 + (value & 255);
+        bitBuffer.put(value, 13);
+      }
+    };
+    module.exports = KanjiData;
+  }
+});
+
+// node_modules/dijkstrajs/dijkstra.js
+var require_dijkstra = __commonJS({
+  "node_modules/dijkstrajs/dijkstra.js"(exports, module) {
+    "use strict";
+    var dijkstra = {
+      single_source_shortest_paths: function(graph, s, d) {
+        var predecessors = {};
+        var costs = {};
+        costs[s] = 0;
+        var open = dijkstra.PriorityQueue.make();
+        open.push(s, 0);
+        var closest, u, v, cost_of_s_to_u, adjacent_nodes, cost_of_e, cost_of_s_to_u_plus_cost_of_e, cost_of_s_to_v, first_visit;
+        while (!open.empty()) {
+          closest = open.pop();
+          u = closest.value;
+          cost_of_s_to_u = closest.cost;
+          adjacent_nodes = graph[u] || {};
+          for (v in adjacent_nodes) {
+            if (adjacent_nodes.hasOwnProperty(v)) {
+              cost_of_e = adjacent_nodes[v];
+              cost_of_s_to_u_plus_cost_of_e = cost_of_s_to_u + cost_of_e;
+              cost_of_s_to_v = costs[v];
+              first_visit = typeof costs[v] === "undefined";
+              if (first_visit || cost_of_s_to_v > cost_of_s_to_u_plus_cost_of_e) {
+                costs[v] = cost_of_s_to_u_plus_cost_of_e;
+                open.push(v, cost_of_s_to_u_plus_cost_of_e);
+                predecessors[v] = u;
+              }
+            }
+          }
+        }
+        if (typeof d !== "undefined" && typeof costs[d] === "undefined") {
+          var msg = ["Could not find a path from ", s, " to ", d, "."].join("");
+          throw new Error(msg);
+        }
+        return predecessors;
+      },
+      extract_shortest_path_from_predecessor_list: function(predecessors, d) {
+        var nodes = [];
+        var u = d;
+        var predecessor;
+        while (u) {
+          nodes.push(u);
+          predecessor = predecessors[u];
+          u = predecessors[u];
+        }
+        nodes.reverse();
+        return nodes;
+      },
+      find_path: function(graph, s, d) {
+        var predecessors = dijkstra.single_source_shortest_paths(graph, s, d);
+        return dijkstra.extract_shortest_path_from_predecessor_list(
+          predecessors,
+          d
+        );
+      },
+      /**
+       * A very naive priority queue implementation.
+       */
+      PriorityQueue: {
+        make: function(opts) {
+          var T = dijkstra.PriorityQueue, t = {}, key;
+          opts = opts || {};
+          for (key in T) {
+            if (T.hasOwnProperty(key)) {
+              t[key] = T[key];
+            }
+          }
+          t.queue = [];
+          t.sorter = opts.sorter || T.default_sorter;
+          return t;
+        },
+        default_sorter: function(a, b) {
+          return a.cost - b.cost;
+        },
+        /**
+         * Add a new item to the queue and ensure the highest priority element
+         * is at the front of the queue.
+         */
+        push: function(value, cost) {
+          var item = { value, cost };
+          this.queue.push(item);
+          this.queue.sort(this.sorter);
+        },
+        /**
+         * Return the highest priority element in the queue.
+         */
+        pop: function() {
+          return this.queue.shift();
+        },
+        empty: function() {
+          return this.queue.length === 0;
+        }
+      }
+    };
+    if (typeof module !== "undefined") {
+      module.exports = dijkstra;
+    }
+  }
+});
+
+// node_modules/qrcode/lib/core/segments.js
+var require_segments = __commonJS({
+  "node_modules/qrcode/lib/core/segments.js"(exports) {
+    var Mode = require_mode();
+    var NumericData = require_numeric_data();
+    var AlphanumericData = require_alphanumeric_data();
+    var ByteData = require_byte_data();
+    var KanjiData = require_kanji_data();
+    var Regex = require_regex();
+    var Utils = require_utils();
+    var dijkstra = require_dijkstra();
+    function getStringByteLength(str) {
+      return unescape(encodeURIComponent(str)).length;
+    }
+    function getSegments(regex, mode, str) {
+      const segments = [];
+      let result;
+      while ((result = regex.exec(str)) !== null) {
+        segments.push({
+          data: result[0],
+          index: result.index,
+          mode,
+          length: result[0].length
+        });
+      }
+      return segments;
+    }
+    function getSegmentsFromString(dataStr) {
+      const numSegs = getSegments(Regex.NUMERIC, Mode.NUMERIC, dataStr);
+      const alphaNumSegs = getSegments(Regex.ALPHANUMERIC, Mode.ALPHANUMERIC, dataStr);
+      let byteSegs;
+      let kanjiSegs;
+      if (Utils.isKanjiModeEnabled()) {
+        byteSegs = getSegments(Regex.BYTE, Mode.BYTE, dataStr);
+        kanjiSegs = getSegments(Regex.KANJI, Mode.KANJI, dataStr);
+      } else {
+        byteSegs = getSegments(Regex.BYTE_KANJI, Mode.BYTE, dataStr);
+        kanjiSegs = [];
+      }
+      const segs = numSegs.concat(alphaNumSegs, byteSegs, kanjiSegs);
+      return segs.sort(function(s1, s2) {
+        return s1.index - s2.index;
+      }).map(function(obj) {
+        return {
+          data: obj.data,
+          mode: obj.mode,
+          length: obj.length
+        };
+      });
+    }
+    function getSegmentBitsLength(length, mode) {
+      switch (mode) {
+        case Mode.NUMERIC:
+          return NumericData.getBitsLength(length);
+        case Mode.ALPHANUMERIC:
+          return AlphanumericData.getBitsLength(length);
+        case Mode.KANJI:
+          return KanjiData.getBitsLength(length);
+        case Mode.BYTE:
+          return ByteData.getBitsLength(length);
+      }
+    }
+    function mergeSegments(segs) {
+      return segs.reduce(function(acc, curr) {
+        const prevSeg = acc.length - 1 >= 0 ? acc[acc.length - 1] : null;
+        if (prevSeg && prevSeg.mode === curr.mode) {
+          acc[acc.length - 1].data += curr.data;
+          return acc;
+        }
+        acc.push(curr);
+        return acc;
+      }, []);
+    }
+    function buildNodes(segs) {
+      const nodes = [];
+      for (let i = 0; i < segs.length; i++) {
+        const seg = segs[i];
+        switch (seg.mode) {
+          case Mode.NUMERIC:
+            nodes.push([
+              seg,
+              { data: seg.data, mode: Mode.ALPHANUMERIC, length: seg.length },
+              { data: seg.data, mode: Mode.BYTE, length: seg.length }
+            ]);
+            break;
+          case Mode.ALPHANUMERIC:
+            nodes.push([
+              seg,
+              { data: seg.data, mode: Mode.BYTE, length: seg.length }
+            ]);
+            break;
+          case Mode.KANJI:
+            nodes.push([
+              seg,
+              { data: seg.data, mode: Mode.BYTE, length: getStringByteLength(seg.data) }
+            ]);
+            break;
+          case Mode.BYTE:
+            nodes.push([
+              { data: seg.data, mode: Mode.BYTE, length: getStringByteLength(seg.data) }
+            ]);
+        }
+      }
+      return nodes;
+    }
+    function buildGraph(nodes, version) {
+      const table = {};
+      const graph = { start: {} };
+      let prevNodeIds = ["start"];
+      for (let i = 0; i < nodes.length; i++) {
+        const nodeGroup = nodes[i];
+        const currentNodeIds = [];
+        for (let j = 0; j < nodeGroup.length; j++) {
+          const node = nodeGroup[j];
+          const key = "" + i + j;
+          currentNodeIds.push(key);
+          table[key] = { node, lastCount: 0 };
+          graph[key] = {};
+          for (let n = 0; n < prevNodeIds.length; n++) {
+            const prevNodeId = prevNodeIds[n];
+            if (table[prevNodeId] && table[prevNodeId].node.mode === node.mode) {
+              graph[prevNodeId][key] = getSegmentBitsLength(table[prevNodeId].lastCount + node.length, node.mode) - getSegmentBitsLength(table[prevNodeId].lastCount, node.mode);
+              table[prevNodeId].lastCount += node.length;
+            } else {
+              if (table[prevNodeId]) table[prevNodeId].lastCount = node.length;
+              graph[prevNodeId][key] = getSegmentBitsLength(node.length, node.mode) + 4 + Mode.getCharCountIndicator(node.mode, version);
+            }
+          }
+        }
+        prevNodeIds = currentNodeIds;
+      }
+      for (let n = 0; n < prevNodeIds.length; n++) {
+        graph[prevNodeIds[n]].end = 0;
+      }
+      return { map: graph, table };
+    }
+    function buildSingleSegment(data, modesHint) {
+      let mode;
+      const bestMode = Mode.getBestModeForData(data);
+      mode = Mode.from(modesHint, bestMode);
+      if (mode !== Mode.BYTE && mode.bit < bestMode.bit) {
+        throw new Error('"' + data + '" cannot be encoded with mode ' + Mode.toString(mode) + ".\n Suggested mode is: " + Mode.toString(bestMode));
+      }
+      if (mode === Mode.KANJI && !Utils.isKanjiModeEnabled()) {
+        mode = Mode.BYTE;
+      }
+      switch (mode) {
+        case Mode.NUMERIC:
+          return new NumericData(data);
+        case Mode.ALPHANUMERIC:
+          return new AlphanumericData(data);
+        case Mode.KANJI:
+          return new KanjiData(data);
+        case Mode.BYTE:
+          return new ByteData(data);
+      }
+    }
+    exports.fromArray = function fromArray(array) {
+      return array.reduce(function(acc, seg) {
+        if (typeof seg === "string") {
+          acc.push(buildSingleSegment(seg, null));
+        } else if (seg.data) {
+          acc.push(buildSingleSegment(seg.data, seg.mode));
+        }
+        return acc;
+      }, []);
+    };
+    exports.fromString = function fromString(data, version) {
+      const segs = getSegmentsFromString(data, Utils.isKanjiModeEnabled());
+      const nodes = buildNodes(segs);
+      const graph = buildGraph(nodes, version);
+      const path = dijkstra.find_path(graph.map, "start", "end");
+      const optimizedSegs = [];
+      for (let i = 1; i < path.length - 1; i++) {
+        optimizedSegs.push(graph.table[path[i]].node);
+      }
+      return exports.fromArray(mergeSegments(optimizedSegs));
+    };
+    exports.rawSplit = function rawSplit(data) {
+      return exports.fromArray(
+        getSegmentsFromString(data, Utils.isKanjiModeEnabled())
+      );
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/qrcode.js
+var require_qrcode = __commonJS({
+  "node_modules/qrcode/lib/core/qrcode.js"(exports) {
+    var Utils = require_utils();
+    var ECLevel = require_error_correction_level();
+    var BitBuffer = require_bit_buffer();
+    var BitMatrix = require_bit_matrix();
+    var AlignmentPattern = require_alignment_pattern();
+    var FinderPattern = require_finder_pattern();
+    var MaskPattern = require_mask_pattern();
+    var ECCode = require_error_correction_code();
+    var ReedSolomonEncoder = require_reed_solomon_encoder();
+    var Version = require_version();
+    var FormatInfo = require_format_info();
+    var Mode = require_mode();
+    var Segments = require_segments();
+    function setupFinderPattern(matrix, version) {
+      const size = matrix.size;
+      const pos = FinderPattern.getPositions(version);
+      for (let i = 0; i < pos.length; i++) {
+        const row = pos[i][0];
+        const col = pos[i][1];
+        for (let r = -1; r <= 7; r++) {
+          if (row + r <= -1 || size <= row + r) continue;
+          for (let c = -1; c <= 7; c++) {
+            if (col + c <= -1 || size <= col + c) continue;
+            if (r >= 0 && r <= 6 && (c === 0 || c === 6) || c >= 0 && c <= 6 && (r === 0 || r === 6) || r >= 2 && r <= 4 && c >= 2 && c <= 4) {
+              matrix.set(row + r, col + c, true, true);
+            } else {
+              matrix.set(row + r, col + c, false, true);
+            }
+          }
+        }
+      }
+    }
+    function setupTimingPattern(matrix) {
+      const size = matrix.size;
+      for (let r = 8; r < size - 8; r++) {
+        const value = r % 2 === 0;
+        matrix.set(r, 6, value, true);
+        matrix.set(6, r, value, true);
+      }
+    }
+    function setupAlignmentPattern(matrix, version) {
+      const pos = AlignmentPattern.getPositions(version);
+      for (let i = 0; i < pos.length; i++) {
+        const row = pos[i][0];
+        const col = pos[i][1];
+        for (let r = -2; r <= 2; r++) {
+          for (let c = -2; c <= 2; c++) {
+            if (r === -2 || r === 2 || c === -2 || c === 2 || r === 0 && c === 0) {
+              matrix.set(row + r, col + c, true, true);
+            } else {
+              matrix.set(row + r, col + c, false, true);
+            }
+          }
+        }
+      }
+    }
+    function setupVersionInfo(matrix, version) {
+      const size = matrix.size;
+      const bits = Version.getEncodedBits(version);
+      let row, col, mod;
+      for (let i = 0; i < 18; i++) {
+        row = Math.floor(i / 3);
+        col = i % 3 + size - 8 - 3;
+        mod = (bits >> i & 1) === 1;
+        matrix.set(row, col, mod, true);
+        matrix.set(col, row, mod, true);
+      }
+    }
+    function setupFormatInfo(matrix, errorCorrectionLevel, maskPattern) {
+      const size = matrix.size;
+      const bits = FormatInfo.getEncodedBits(errorCorrectionLevel, maskPattern);
+      let i, mod;
+      for (i = 0; i < 15; i++) {
+        mod = (bits >> i & 1) === 1;
+        if (i < 6) {
+          matrix.set(i, 8, mod, true);
+        } else if (i < 8) {
+          matrix.set(i + 1, 8, mod, true);
+        } else {
+          matrix.set(size - 15 + i, 8, mod, true);
+        }
+        if (i < 8) {
+          matrix.set(8, size - i - 1, mod, true);
+        } else if (i < 9) {
+          matrix.set(8, 15 - i - 1 + 1, mod, true);
+        } else {
+          matrix.set(8, 15 - i - 1, mod, true);
+        }
+      }
+      matrix.set(size - 8, 8, 1, true);
+    }
+    function setupData(matrix, data) {
+      const size = matrix.size;
+      let inc = -1;
+      let row = size - 1;
+      let bitIndex = 7;
+      let byteIndex = 0;
+      for (let col = size - 1; col > 0; col -= 2) {
+        if (col === 6) col--;
+        while (true) {
+          for (let c = 0; c < 2; c++) {
+            if (!matrix.isReserved(row, col - c)) {
+              let dark = false;
+              if (byteIndex < data.length) {
+                dark = (data[byteIndex] >>> bitIndex & 1) === 1;
+              }
+              matrix.set(row, col - c, dark);
+              bitIndex--;
+              if (bitIndex === -1) {
+                byteIndex++;
+                bitIndex = 7;
+              }
+            }
+          }
+          row += inc;
+          if (row < 0 || size <= row) {
+            row -= inc;
+            inc = -inc;
+            break;
+          }
+        }
+      }
+    }
+    function createData(version, errorCorrectionLevel, segments) {
+      const buffer = new BitBuffer();
+      segments.forEach(function(data) {
+        buffer.put(data.mode.bit, 4);
+        buffer.put(data.getLength(), Mode.getCharCountIndicator(data.mode, version));
+        data.write(buffer);
+      });
+      const totalCodewords = Utils.getSymbolTotalCodewords(version);
+      const ecTotalCodewords = ECCode.getTotalCodewordsCount(version, errorCorrectionLevel);
+      const dataTotalCodewordsBits = (totalCodewords - ecTotalCodewords) * 8;
+      if (buffer.getLengthInBits() + 4 <= dataTotalCodewordsBits) {
+        buffer.put(0, 4);
+      }
+      while (buffer.getLengthInBits() % 8 !== 0) {
+        buffer.putBit(0);
+      }
+      const remainingByte = (dataTotalCodewordsBits - buffer.getLengthInBits()) / 8;
+      for (let i = 0; i < remainingByte; i++) {
+        buffer.put(i % 2 ? 17 : 236, 8);
+      }
+      return createCodewords(buffer, version, errorCorrectionLevel);
+    }
+    function createCodewords(bitBuffer, version, errorCorrectionLevel) {
+      const totalCodewords = Utils.getSymbolTotalCodewords(version);
+      const ecTotalCodewords = ECCode.getTotalCodewordsCount(version, errorCorrectionLevel);
+      const dataTotalCodewords = totalCodewords - ecTotalCodewords;
+      const ecTotalBlocks = ECCode.getBlocksCount(version, errorCorrectionLevel);
+      const blocksInGroup2 = totalCodewords % ecTotalBlocks;
+      const blocksInGroup1 = ecTotalBlocks - blocksInGroup2;
+      const totalCodewordsInGroup1 = Math.floor(totalCodewords / ecTotalBlocks);
+      const dataCodewordsInGroup1 = Math.floor(dataTotalCodewords / ecTotalBlocks);
+      const dataCodewordsInGroup2 = dataCodewordsInGroup1 + 1;
+      const ecCount = totalCodewordsInGroup1 - dataCodewordsInGroup1;
+      const rs = new ReedSolomonEncoder(ecCount);
+      let offset = 0;
+      const dcData = new Array(ecTotalBlocks);
+      const ecData = new Array(ecTotalBlocks);
+      let maxDataSize = 0;
+      const buffer = new Uint8Array(bitBuffer.buffer);
+      for (let b = 0; b < ecTotalBlocks; b++) {
+        const dataSize = b < blocksInGroup1 ? dataCodewordsInGroup1 : dataCodewordsInGroup2;
+        dcData[b] = buffer.slice(offset, offset + dataSize);
+        ecData[b] = rs.encode(dcData[b]);
+        offset += dataSize;
+        maxDataSize = Math.max(maxDataSize, dataSize);
+      }
+      const data = new Uint8Array(totalCodewords);
+      let index = 0;
+      let i, r;
+      for (i = 0; i < maxDataSize; i++) {
+        for (r = 0; r < ecTotalBlocks; r++) {
+          if (i < dcData[r].length) {
+            data[index++] = dcData[r][i];
+          }
+        }
+      }
+      for (i = 0; i < ecCount; i++) {
+        for (r = 0; r < ecTotalBlocks; r++) {
+          data[index++] = ecData[r][i];
+        }
+      }
+      return data;
+    }
+    function createSymbol(data, version, errorCorrectionLevel, maskPattern) {
+      let segments;
+      if (Array.isArray(data)) {
+        segments = Segments.fromArray(data);
+      } else if (typeof data === "string") {
+        let estimatedVersion = version;
+        if (!estimatedVersion) {
+          const rawSegments = Segments.rawSplit(data);
+          estimatedVersion = Version.getBestVersionForData(rawSegments, errorCorrectionLevel);
+        }
+        segments = Segments.fromString(data, estimatedVersion || 40);
+      } else {
+        throw new Error("Invalid data");
+      }
+      const bestVersion = Version.getBestVersionForData(segments, errorCorrectionLevel);
+      if (!bestVersion) {
+        throw new Error("The amount of data is too big to be stored in a QR Code");
+      }
+      if (!version) {
+        version = bestVersion;
+      } else if (version < bestVersion) {
+        throw new Error(
+          "\nThe chosen QR Code version cannot contain this amount of data.\nMinimum version required to store current data is: " + bestVersion + ".\n"
+        );
+      }
+      const dataBits = createData(version, errorCorrectionLevel, segments);
+      const moduleCount = Utils.getSymbolSize(version);
+      const modules = new BitMatrix(moduleCount);
+      setupFinderPattern(modules, version);
+      setupTimingPattern(modules);
+      setupAlignmentPattern(modules, version);
+      setupFormatInfo(modules, errorCorrectionLevel, 0);
+      if (version >= 7) {
+        setupVersionInfo(modules, version);
+      }
+      setupData(modules, dataBits);
+      if (isNaN(maskPattern)) {
+        maskPattern = MaskPattern.getBestMask(
+          modules,
+          setupFormatInfo.bind(null, modules, errorCorrectionLevel)
+        );
+      }
+      MaskPattern.applyMask(maskPattern, modules);
+      setupFormatInfo(modules, errorCorrectionLevel, maskPattern);
+      return {
+        modules,
+        version,
+        errorCorrectionLevel,
+        maskPattern,
+        segments
+      };
+    }
+    exports.create = function create(data, options) {
+      if (typeof data === "undefined" || data === "") {
+        throw new Error("No input text");
+      }
+      let errorCorrectionLevel = ECLevel.M;
+      let version;
+      let mask;
+      if (typeof options !== "undefined") {
+        errorCorrectionLevel = ECLevel.from(options.errorCorrectionLevel, ECLevel.M);
+        version = Version.from(options.version);
+        mask = MaskPattern.from(options.maskPattern);
+        if (options.toSJISFunc) {
+          Utils.setToSJISFunction(options.toSJISFunc);
+        }
+      }
+      return createSymbol(data, version, errorCorrectionLevel, mask);
+    };
+  }
+});
+
+// node_modules/qrcode/lib/renderer/utils.js
+var require_utils2 = __commonJS({
+  "node_modules/qrcode/lib/renderer/utils.js"(exports) {
+    function hex2rgba(hex) {
+      if (typeof hex === "number") {
+        hex = hex.toString();
+      }
+      if (typeof hex !== "string") {
+        throw new Error("Color should be defined as hex string");
+      }
+      let hexCode = hex.slice().replace("#", "").split("");
+      if (hexCode.length < 3 || hexCode.length === 5 || hexCode.length > 8) {
+        throw new Error("Invalid hex color: " + hex);
+      }
+      if (hexCode.length === 3 || hexCode.length === 4) {
+        hexCode = Array.prototype.concat.apply([], hexCode.map(function(c) {
+          return [c, c];
+        }));
+      }
+      if (hexCode.length === 6) hexCode.push("F", "F");
+      const hexValue = parseInt(hexCode.join(""), 16);
+      return {
+        r: hexValue >> 24 & 255,
+        g: hexValue >> 16 & 255,
+        b: hexValue >> 8 & 255,
+        a: hexValue & 255,
+        hex: "#" + hexCode.slice(0, 6).join("")
+      };
+    }
+    exports.getOptions = function getOptions(options) {
+      if (!options) options = {};
+      if (!options.color) options.color = {};
+      const margin = typeof options.margin === "undefined" || options.margin === null || options.margin < 0 ? 4 : options.margin;
+      const width = options.width && options.width >= 21 ? options.width : void 0;
+      const scale = options.scale || 4;
+      return {
+        width,
+        scale: width ? 4 : scale,
+        margin,
+        color: {
+          dark: hex2rgba(options.color.dark || "#000000ff"),
+          light: hex2rgba(options.color.light || "#ffffffff")
+        },
+        type: options.type,
+        rendererOpts: options.rendererOpts || {}
+      };
+    };
+    exports.getScale = function getScale(qrSize, opts) {
+      return opts.width && opts.width >= qrSize + opts.margin * 2 ? opts.width / (qrSize + opts.margin * 2) : opts.scale;
+    };
+    exports.getImageWidth = function getImageWidth(qrSize, opts) {
+      const scale = exports.getScale(qrSize, opts);
+      return Math.floor((qrSize + opts.margin * 2) * scale);
+    };
+    exports.qrToImageData = function qrToImageData(imgData, qr, opts) {
+      const size = qr.modules.size;
+      const data = qr.modules.data;
+      const scale = exports.getScale(size, opts);
+      const symbolSize = Math.floor((size + opts.margin * 2) * scale);
+      const scaledMargin = opts.margin * scale;
+      const palette = [opts.color.light, opts.color.dark];
+      for (let i = 0; i < symbolSize; i++) {
+        for (let j = 0; j < symbolSize; j++) {
+          let posDst = (i * symbolSize + j) * 4;
+          let pxColor = opts.color.light;
+          if (i >= scaledMargin && j >= scaledMargin && i < symbolSize - scaledMargin && j < symbolSize - scaledMargin) {
+            const iSrc = Math.floor((i - scaledMargin) / scale);
+            const jSrc = Math.floor((j - scaledMargin) / scale);
+            pxColor = palette[data[iSrc * size + jSrc] ? 1 : 0];
+          }
+          imgData[posDst++] = pxColor.r;
+          imgData[posDst++] = pxColor.g;
+          imgData[posDst++] = pxColor.b;
+          imgData[posDst] = pxColor.a;
+        }
+      }
+    };
+  }
+});
+
+// node_modules/qrcode/lib/renderer/canvas.js
+var require_canvas = __commonJS({
+  "node_modules/qrcode/lib/renderer/canvas.js"(exports) {
+    var Utils = require_utils2();
+    function clearCanvas(ctx, canvas, size) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (!canvas.style) canvas.style = {};
+      canvas.height = size;
+      canvas.width = size;
+      canvas.style.height = size + "px";
+      canvas.style.width = size + "px";
+    }
+    function getCanvasElement() {
+      try {
+        return document.createElement("canvas");
+      } catch (e) {
+        throw new Error("You need to specify a canvas element");
+      }
+    }
+    exports.render = function render(qrData, canvas, options) {
+      let opts = options;
+      let canvasEl = canvas;
+      if (typeof opts === "undefined" && (!canvas || !canvas.getContext)) {
+        opts = canvas;
+        canvas = void 0;
+      }
+      if (!canvas) {
+        canvasEl = getCanvasElement();
+      }
+      opts = Utils.getOptions(opts);
+      const size = Utils.getImageWidth(qrData.modules.size, opts);
+      const ctx = canvasEl.getContext("2d");
+      const image = ctx.createImageData(size, size);
+      Utils.qrToImageData(image.data, qrData, opts);
+      clearCanvas(ctx, canvasEl, size);
+      ctx.putImageData(image, 0, 0);
+      return canvasEl;
+    };
+    exports.renderToDataURL = function renderToDataURL(qrData, canvas, options) {
+      let opts = options;
+      if (typeof opts === "undefined" && (!canvas || !canvas.getContext)) {
+        opts = canvas;
+        canvas = void 0;
+      }
+      if (!opts) opts = {};
+      const canvasEl = exports.render(qrData, canvas, opts);
+      const type = opts.type || "image/png";
+      const rendererOpts = opts.rendererOpts || {};
+      return canvasEl.toDataURL(type, rendererOpts.quality);
+    };
+  }
+});
+
+// node_modules/qrcode/lib/renderer/svg-tag.js
+var require_svg_tag = __commonJS({
+  "node_modules/qrcode/lib/renderer/svg-tag.js"(exports) {
+    var Utils = require_utils2();
+    function getColorAttrib(color, attrib) {
+      const alpha = color.a / 255;
+      const str = attrib + '="' + color.hex + '"';
+      return alpha < 1 ? str + " " + attrib + '-opacity="' + alpha.toFixed(2).slice(1) + '"' : str;
+    }
+    function svgCmd(cmd, x, y) {
+      let str = cmd + x;
+      if (typeof y !== "undefined") str += " " + y;
+      return str;
+    }
+    function qrToPath(data, size, margin) {
+      let path = "";
+      let moveBy = 0;
+      let newRow = false;
+      let lineLength = 0;
+      for (let i = 0; i < data.length; i++) {
+        const col = Math.floor(i % size);
+        const row = Math.floor(i / size);
+        if (!col && !newRow) newRow = true;
+        if (data[i]) {
+          lineLength++;
+          if (!(i > 0 && col > 0 && data[i - 1])) {
+            path += newRow ? svgCmd("M", col + margin, 0.5 + row + margin) : svgCmd("m", moveBy, 0);
+            moveBy = 0;
+            newRow = false;
+          }
+          if (!(col + 1 < size && data[i + 1])) {
+            path += svgCmd("h", lineLength);
+            lineLength = 0;
+          }
+        } else {
+          moveBy++;
+        }
+      }
+      return path;
+    }
+    exports.render = function render(qrData, options, cb) {
+      const opts = Utils.getOptions(options);
+      const size = qrData.modules.size;
+      const data = qrData.modules.data;
+      const qrcodesize = size + opts.margin * 2;
+      const bg = !opts.color.light.a ? "" : "<path " + getColorAttrib(opts.color.light, "fill") + ' d="M0 0h' + qrcodesize + "v" + qrcodesize + 'H0z"/>';
+      const path = "<path " + getColorAttrib(opts.color.dark, "stroke") + ' d="' + qrToPath(data, size, opts.margin) + '"/>';
+      const viewBox = 'viewBox="0 0 ' + qrcodesize + " " + qrcodesize + '"';
+      const width = !opts.width ? "" : 'width="' + opts.width + '" height="' + opts.width + '" ';
+      const svgTag = '<svg xmlns="http://www.w3.org/2000/svg" ' + width + viewBox + ' shape-rendering="crispEdges">' + bg + path + "</svg>\n";
+      if (typeof cb === "function") {
+        cb(null, svgTag);
+      }
+      return svgTag;
+    };
+  }
+});
+
+// node_modules/qrcode/lib/browser.js
+var require_browser = __commonJS({
+  "node_modules/qrcode/lib/browser.js"(exports) {
+    var canPromise = require_can_promise();
+    var QRCode2 = require_qrcode();
+    var CanvasRenderer = require_canvas();
+    var SvgRenderer = require_svg_tag();
+    function renderCanvas(renderFunc, canvas, text2, opts, cb) {
+      const args = [].slice.call(arguments, 1);
+      const argsNum = args.length;
+      const isLastArgCb = typeof args[argsNum - 1] === "function";
+      if (!isLastArgCb && !canPromise()) {
+        throw new Error("Callback required as last argument");
+      }
+      if (isLastArgCb) {
+        if (argsNum < 2) {
+          throw new Error("Too few arguments provided");
+        }
+        if (argsNum === 2) {
+          cb = text2;
+          text2 = canvas;
+          canvas = opts = void 0;
+        } else if (argsNum === 3) {
+          if (canvas.getContext && typeof cb === "undefined") {
+            cb = opts;
+            opts = void 0;
+          } else {
+            cb = opts;
+            opts = text2;
+            text2 = canvas;
+            canvas = void 0;
+          }
+        }
+      } else {
+        if (argsNum < 1) {
+          throw new Error("Too few arguments provided");
+        }
+        if (argsNum === 1) {
+          text2 = canvas;
+          canvas = opts = void 0;
+        } else if (argsNum === 2 && !canvas.getContext) {
+          opts = text2;
+          text2 = canvas;
+          canvas = void 0;
+        }
+        return new Promise(function(resolve, reject) {
+          try {
+            const data = QRCode2.create(text2, opts);
+            resolve(renderFunc(data, canvas, opts));
+          } catch (e) {
+            reject(e);
+          }
+        });
+      }
+      try {
+        const data = QRCode2.create(text2, opts);
+        cb(null, renderFunc(data, canvas, opts));
+      } catch (e) {
+        cb(e);
+      }
+    }
+    exports.create = QRCode2.create;
+    exports.toCanvas = renderCanvas.bind(null, CanvasRenderer.render);
+    exports.toDataURL = renderCanvas.bind(null, CanvasRenderer.renderToDataURL);
+    exports.toString = renderCanvas.bind(null, function(data, _, opts) {
+      return SvgRenderer.render(data, opts);
+    });
+  }
+});
+
+// node_modules/sdp/sdp.js
+var require_sdp = __commonJS({
+  "node_modules/sdp/sdp.js"(exports, module) {
+    "use strict";
+    var SDPUtils2 = {};
+    SDPUtils2.generateIdentifier = function() {
+      return Math.random().toString(36).substring(2, 12);
+    };
+    SDPUtils2.localCName = SDPUtils2.generateIdentifier();
+    SDPUtils2.splitLines = function(blob) {
+      return blob.trim().split("\n").map((line) => line.trim());
+    };
+    SDPUtils2.splitSections = function(blob) {
+      const parts = blob.split("\nm=");
+      return parts.map((part, index) => (index > 0 ? "m=" + part : part).trim() + "\r\n");
+    };
+    SDPUtils2.getDescription = function(blob) {
+      const sections = SDPUtils2.splitSections(blob);
+      return sections && sections[0];
+    };
+    SDPUtils2.getMediaSections = function(blob) {
+      const sections = SDPUtils2.splitSections(blob);
+      sections.shift();
+      return sections;
+    };
+    SDPUtils2.matchPrefix = function(blob, prefix2) {
+      return SDPUtils2.splitLines(blob).filter((line) => line.indexOf(prefix2) === 0);
+    };
+    SDPUtils2.parseCandidate = function(line) {
+      let parts;
+      if (line.indexOf("a=candidate:") === 0) {
+        parts = line.substring(12).split(" ");
+      } else {
+        parts = line.substring(10).split(" ");
+      }
+      const candidate = {
+        foundation: parts[0],
+        component: { 1: "rtp", 2: "rtcp" }[parts[1]] || parts[1],
+        protocol: parts[2].toLowerCase(),
+        priority: parseInt(parts[3], 10),
+        ip: parts[4],
+        address: parts[4],
+        // address is an alias for ip.
+        port: parseInt(parts[5], 10),
+        // skip parts[6] == 'typ'
+        type: parts[7]
+      };
+      for (let i = 8; i < parts.length; i += 2) {
+        switch (parts[i]) {
+          case "raddr":
+            candidate.relatedAddress = parts[i + 1];
+            break;
+          case "rport":
+            candidate.relatedPort = parseInt(parts[i + 1], 10);
+            break;
+          case "tcptype":
+            candidate.tcpType = parts[i + 1];
+            break;
+          case "ufrag":
+            candidate.ufrag = parts[i + 1];
+            candidate.usernameFragment = parts[i + 1];
+            break;
+          default:
+            if (candidate[parts[i]] === void 0) {
+              candidate[parts[i]] = parts[i + 1];
+            }
+            break;
+        }
+      }
+      return candidate;
+    };
+    SDPUtils2.writeCandidate = function(candidate) {
+      const sdp2 = [];
+      sdp2.push(candidate.foundation);
+      const component = candidate.component;
+      if (component === "rtp") {
+        sdp2.push(1);
+      } else if (component === "rtcp") {
+        sdp2.push(2);
+      } else {
+        sdp2.push(component);
+      }
+      sdp2.push(candidate.protocol.toUpperCase());
+      sdp2.push(candidate.priority);
+      sdp2.push(candidate.address || candidate.ip);
+      sdp2.push(candidate.port);
+      const type = candidate.type;
+      sdp2.push("typ");
+      sdp2.push(type);
+      if (type !== "host" && candidate.relatedAddress && candidate.relatedPort !== void 0) {
+        sdp2.push("raddr");
+        sdp2.push(candidate.relatedAddress);
+        sdp2.push("rport");
+        sdp2.push(candidate.relatedPort);
+      }
+      if (candidate.tcpType && candidate.protocol.toLowerCase() === "tcp") {
+        sdp2.push("tcptype");
+        sdp2.push(candidate.tcpType);
+      }
+      if (candidate.usernameFragment || candidate.ufrag) {
+        sdp2.push("ufrag");
+        sdp2.push(candidate.usernameFragment || candidate.ufrag);
+      }
+      return "candidate:" + sdp2.join(" ");
+    };
+    SDPUtils2.parseIceOptions = function(line) {
+      return line.substring(14).split(" ");
+    };
+    SDPUtils2.parseRtpMap = function(line) {
+      let parts = line.substring(9).split(" ");
+      const parsed = {
+        payloadType: parseInt(parts.shift(), 10)
+        // was: id
+      };
+      parts = parts[0].split("/");
+      parsed.name = parts[0];
+      parsed.clockRate = parseInt(parts[1], 10);
+      parsed.channels = parts.length === 3 ? parseInt(parts[2], 10) : 1;
+      parsed.numChannels = parsed.channels;
+      return parsed;
+    };
+    SDPUtils2.writeRtpMap = function(codec) {
+      let pt = codec.payloadType;
+      if (codec.preferredPayloadType !== void 0) {
+        pt = codec.preferredPayloadType;
+      }
+      const channels = codec.channels || codec.numChannels || 1;
+      return "a=rtpmap:" + pt + " " + codec.name + "/" + codec.clockRate + (channels !== 1 ? "/" + channels : "") + "\r\n";
+    };
+    SDPUtils2.parseExtmap = function(line) {
+      const parts = line.substring(9).split(" ");
+      return {
+        id: parseInt(parts[0], 10),
+        direction: parts[0].indexOf("/") > 0 ? parts[0].split("/")[1] : "sendrecv",
+        uri: parts[1],
+        attributes: parts.slice(2).join(" ")
+      };
+    };
+    SDPUtils2.writeExtmap = function(headerExtension) {
+      return "a=extmap:" + (headerExtension.id || headerExtension.preferredId) + (headerExtension.direction && headerExtension.direction !== "sendrecv" ? "/" + headerExtension.direction : "") + " " + headerExtension.uri + (headerExtension.attributes ? " " + headerExtension.attributes : "") + "\r\n";
+    };
+    SDPUtils2.parseFmtp = function(line) {
+      const parsed = {};
+      let kv;
+      const parts = line.substring(line.indexOf(" ") + 1).split(";");
+      for (let j = 0; j < parts.length; j++) {
+        kv = parts[j].trim().split("=");
+        parsed[kv[0].trim()] = kv[1];
+      }
+      return parsed;
+    };
+    SDPUtils2.writeFmtp = function(codec) {
+      let line = "";
+      let pt = codec.payloadType;
+      if (codec.preferredPayloadType !== void 0) {
+        pt = codec.preferredPayloadType;
+      }
+      if (codec.parameters && Object.keys(codec.parameters).length) {
+        const params = [];
+        Object.keys(codec.parameters).forEach((param) => {
+          if (codec.parameters[param] !== void 0) {
+            params.push(param + "=" + codec.parameters[param]);
+          } else {
+            params.push(param);
+          }
+        });
+        line += "a=fmtp:" + pt + " " + params.join(";") + "\r\n";
+      }
+      return line;
+    };
+    SDPUtils2.parseRtcpFb = function(line) {
+      const parts = line.substring(line.indexOf(" ") + 1).split(" ");
+      return {
+        type: parts.shift(),
+        parameter: parts.join(" ")
+      };
+    };
+    SDPUtils2.writeRtcpFb = function(codec) {
+      let lines = "";
+      let pt = codec.payloadType;
+      if (codec.preferredPayloadType !== void 0) {
+        pt = codec.preferredPayloadType;
+      }
+      if (codec.rtcpFeedback && codec.rtcpFeedback.length) {
+        codec.rtcpFeedback.forEach((fb) => {
+          lines += "a=rtcp-fb:" + pt + " " + fb.type + (fb.parameter && fb.parameter.length ? " " + fb.parameter : "") + "\r\n";
+        });
+      }
+      return lines;
+    };
+    SDPUtils2.parseSsrcMedia = function(line) {
+      const sp = line.indexOf(" ");
+      const parts = {
+        ssrc: parseInt(line.substring(7, sp), 10)
+      };
+      const colon = line.indexOf(":", sp);
+      if (colon > -1) {
+        parts.attribute = line.substring(sp + 1, colon);
+        parts.value = line.substring(colon + 1);
+      } else {
+        parts.attribute = line.substring(sp + 1);
+      }
+      return parts;
+    };
+    SDPUtils2.parseSsrcGroup = function(line) {
+      const parts = line.substring(13).split(" ");
+      return {
+        semantics: parts.shift(),
+        ssrcs: parts.map((ssrc) => parseInt(ssrc, 10))
+      };
+    };
+    SDPUtils2.getMid = function(mediaSection) {
+      const mid = SDPUtils2.matchPrefix(mediaSection, "a=mid:")[0];
+      if (mid) {
+        return mid.substring(6);
+      }
+    };
+    SDPUtils2.parseFingerprint = function(line) {
+      const parts = line.substring(14).split(" ");
+      return {
+        algorithm: parts[0].toLowerCase(),
+        // algorithm is case-sensitive in Edge.
+        value: parts[1].toUpperCase()
+        // the definition is upper-case in RFC 4572.
+      };
+    };
+    SDPUtils2.getDtlsParameters = function(mediaSection, sessionpart) {
+      const lines = SDPUtils2.matchPrefix(
+        mediaSection + sessionpart,
+        "a=fingerprint:"
+      );
+      return {
+        role: "auto",
+        fingerprints: lines.map(SDPUtils2.parseFingerprint)
+      };
+    };
+    SDPUtils2.writeDtlsParameters = function(params, setupType) {
+      let sdp2 = "a=setup:" + setupType + "\r\n";
+      params.fingerprints.forEach((fp) => {
+        sdp2 += "a=fingerprint:" + fp.algorithm + " " + fp.value + "\r\n";
+      });
+      return sdp2;
+    };
+    SDPUtils2.parseCryptoLine = function(line) {
+      const parts = line.substring(9).split(" ");
+      return {
+        tag: parseInt(parts[0], 10),
+        cryptoSuite: parts[1],
+        keyParams: parts[2],
+        sessionParams: parts.slice(3)
+      };
+    };
+    SDPUtils2.writeCryptoLine = function(parameters) {
+      return "a=crypto:" + parameters.tag + " " + parameters.cryptoSuite + " " + (typeof parameters.keyParams === "object" ? SDPUtils2.writeCryptoKeyParams(parameters.keyParams) : parameters.keyParams) + (parameters.sessionParams ? " " + parameters.sessionParams.join(" ") : "") + "\r\n";
+    };
+    SDPUtils2.parseCryptoKeyParams = function(keyParams) {
+      if (keyParams.indexOf("inline:") !== 0) {
+        return null;
+      }
+      const parts = keyParams.substring(7).split("|");
+      return {
+        keyMethod: "inline",
+        keySalt: parts[0],
+        lifeTime: parts[1],
+        mkiValue: parts[2] ? parts[2].split(":")[0] : void 0,
+        mkiLength: parts[2] ? parts[2].split(":")[1] : void 0
+      };
+    };
+    SDPUtils2.writeCryptoKeyParams = function(keyParams) {
+      return keyParams.keyMethod + ":" + keyParams.keySalt + (keyParams.lifeTime ? "|" + keyParams.lifeTime : "") + (keyParams.mkiValue && keyParams.mkiLength ? "|" + keyParams.mkiValue + ":" + keyParams.mkiLength : "");
+    };
+    SDPUtils2.getCryptoParameters = function(mediaSection, sessionpart) {
+      const lines = SDPUtils2.matchPrefix(
+        mediaSection + sessionpart,
+        "a=crypto:"
+      );
+      return lines.map(SDPUtils2.parseCryptoLine);
+    };
+    SDPUtils2.getIceParameters = function(mediaSection, sessionpart) {
+      const ufrag = SDPUtils2.matchPrefix(
+        mediaSection + sessionpart,
+        "a=ice-ufrag:"
+      )[0];
+      const pwd = SDPUtils2.matchPrefix(
+        mediaSection + sessionpart,
+        "a=ice-pwd:"
+      )[0];
+      if (!(ufrag && pwd)) {
+        return null;
+      }
+      return {
+        usernameFragment: ufrag.substring(12),
+        password: pwd.substring(10)
+      };
+    };
+    SDPUtils2.writeIceParameters = function(params) {
+      let sdp2 = "a=ice-ufrag:" + params.usernameFragment + "\r\na=ice-pwd:" + params.password + "\r\n";
+      if (params.iceLite) {
+        sdp2 += "a=ice-lite\r\n";
+      }
+      return sdp2;
+    };
+    SDPUtils2.parseRtpParameters = function(mediaSection) {
+      const description = {
+        codecs: [],
+        headerExtensions: [],
+        fecMechanisms: [],
+        rtcp: []
+      };
+      const lines = SDPUtils2.splitLines(mediaSection);
+      const mline = lines[0].split(" ");
+      description.profile = mline[2];
+      for (let i = 3; i < mline.length; i++) {
+        const pt = mline[i];
+        const rtpmapline = SDPUtils2.matchPrefix(
+          mediaSection,
+          "a=rtpmap:" + pt + " "
+        )[0];
+        if (rtpmapline) {
+          const codec = SDPUtils2.parseRtpMap(rtpmapline);
+          const fmtps = SDPUtils2.matchPrefix(
+            mediaSection,
+            "a=fmtp:" + pt + " "
+          );
+          codec.parameters = fmtps.length ? SDPUtils2.parseFmtp(fmtps[0]) : {};
+          codec.rtcpFeedback = SDPUtils2.matchPrefix(
+            mediaSection,
+            "a=rtcp-fb:" + pt + " "
+          ).map(SDPUtils2.parseRtcpFb);
+          description.codecs.push(codec);
+          switch (codec.name.toUpperCase()) {
+            case "RED":
+            case "ULPFEC":
+              description.fecMechanisms.push(codec.name.toUpperCase());
+              break;
+            default:
+              break;
+          }
+        }
+      }
+      SDPUtils2.matchPrefix(mediaSection, "a=extmap:").forEach((line) => {
+        description.headerExtensions.push(SDPUtils2.parseExtmap(line));
+      });
+      const wildcardRtcpFb = SDPUtils2.matchPrefix(mediaSection, "a=rtcp-fb:* ").map(SDPUtils2.parseRtcpFb);
+      description.codecs.forEach((codec) => {
+        wildcardRtcpFb.forEach((fb) => {
+          const duplicate = codec.rtcpFeedback.find((existingFeedback) => {
+            return existingFeedback.type === fb.type && existingFeedback.parameter === fb.parameter;
+          });
+          if (!duplicate) {
+            codec.rtcpFeedback.push(fb);
+          }
+        });
+      });
+      return description;
+    };
+    SDPUtils2.writeRtpDescription = function(kind, caps) {
+      let sdp2 = "";
+      sdp2 += "m=" + kind + " ";
+      sdp2 += caps.codecs.length > 0 ? "9" : "0";
+      sdp2 += " " + (caps.profile || "UDP/TLS/RTP/SAVPF") + " ";
+      sdp2 += caps.codecs.map((codec) => {
+        if (codec.preferredPayloadType !== void 0) {
+          return codec.preferredPayloadType;
+        }
+        return codec.payloadType;
+      }).join(" ") + "\r\n";
+      sdp2 += "c=IN IP4 0.0.0.0\r\n";
+      sdp2 += "a=rtcp:9 IN IP4 0.0.0.0\r\n";
+      caps.codecs.forEach((codec) => {
+        sdp2 += SDPUtils2.writeRtpMap(codec);
+        sdp2 += SDPUtils2.writeFmtp(codec);
+        sdp2 += SDPUtils2.writeRtcpFb(codec);
+      });
+      let maxptime = 0;
+      caps.codecs.forEach((codec) => {
+        if (codec.maxptime > maxptime) {
+          maxptime = codec.maxptime;
+        }
+      });
+      if (maxptime > 0) {
+        sdp2 += "a=maxptime:" + maxptime + "\r\n";
+      }
+      if (caps.headerExtensions) {
+        caps.headerExtensions.forEach((extension) => {
+          sdp2 += SDPUtils2.writeExtmap(extension);
+        });
+      }
+      return sdp2;
+    };
+    SDPUtils2.parseRtpEncodingParameters = function(mediaSection) {
+      const encodingParameters = [];
+      const description = SDPUtils2.parseRtpParameters(mediaSection);
+      const hasRed = description.fecMechanisms.indexOf("RED") !== -1;
+      const hasUlpfec = description.fecMechanisms.indexOf("ULPFEC") !== -1;
+      const ssrcs = SDPUtils2.matchPrefix(mediaSection, "a=ssrc:").map((line) => SDPUtils2.parseSsrcMedia(line)).filter((parts) => parts.attribute === "cname");
+      const primarySsrc = ssrcs.length > 0 && ssrcs[0].ssrc;
+      let secondarySsrc;
+      const flows = SDPUtils2.matchPrefix(mediaSection, "a=ssrc-group:FID").map((line) => {
+        const parts = line.substring(17).split(" ");
+        return parts.map((part) => parseInt(part, 10));
+      });
+      if (flows.length > 0 && flows[0].length > 1 && flows[0][0] === primarySsrc) {
+        secondarySsrc = flows[0][1];
+      }
+      description.codecs.forEach((codec) => {
+        if (codec.name.toUpperCase() === "RTX" && codec.parameters.apt) {
+          let encParam = {
+            ssrc: primarySsrc,
+            codecPayloadType: parseInt(codec.parameters.apt, 10)
+          };
+          if (primarySsrc && secondarySsrc) {
+            encParam.rtx = { ssrc: secondarySsrc };
+          }
+          encodingParameters.push(encParam);
+          if (hasRed) {
+            encParam = JSON.parse(JSON.stringify(encParam));
+            encParam.fec = {
+              ssrc: primarySsrc,
+              mechanism: hasUlpfec ? "red+ulpfec" : "red"
+            };
+            encodingParameters.push(encParam);
+          }
+        }
+      });
+      if (encodingParameters.length === 0 && primarySsrc) {
+        encodingParameters.push({
+          ssrc: primarySsrc
+        });
+      }
+      let bandwidth = SDPUtils2.matchPrefix(mediaSection, "b=");
+      if (bandwidth.length) {
+        if (bandwidth[0].indexOf("b=TIAS:") === 0) {
+          bandwidth = parseInt(bandwidth[0].substring(7), 10);
+        } else if (bandwidth[0].indexOf("b=AS:") === 0) {
+          bandwidth = parseInt(bandwidth[0].substring(5), 10) * 1e3 * 0.95 - 50 * 40 * 8;
+        } else {
+          bandwidth = void 0;
+        }
+        encodingParameters.forEach((params) => {
+          params.maxBitrate = bandwidth;
+        });
+      }
+      return encodingParameters;
+    };
+    SDPUtils2.parseRtcpParameters = function(mediaSection) {
+      const rtcpParameters = {};
+      const remoteSsrc = SDPUtils2.matchPrefix(mediaSection, "a=ssrc:").map((line) => SDPUtils2.parseSsrcMedia(line)).filter((obj) => obj.attribute === "cname")[0];
+      if (remoteSsrc) {
+        rtcpParameters.cname = remoteSsrc.value;
+        rtcpParameters.ssrc = remoteSsrc.ssrc;
+      }
+      const rsize = SDPUtils2.matchPrefix(mediaSection, "a=rtcp-rsize");
+      rtcpParameters.reducedSize = rsize.length > 0;
+      rtcpParameters.compound = rsize.length === 0;
+      const mux = SDPUtils2.matchPrefix(mediaSection, "a=rtcp-mux");
+      rtcpParameters.mux = mux.length > 0;
+      return rtcpParameters;
+    };
+    SDPUtils2.writeRtcpParameters = function(rtcpParameters) {
+      let sdp2 = "";
+      if (rtcpParameters.reducedSize) {
+        sdp2 += "a=rtcp-rsize\r\n";
+      }
+      if (rtcpParameters.mux) {
+        sdp2 += "a=rtcp-mux\r\n";
+      }
+      if (rtcpParameters.ssrc !== void 0 && rtcpParameters.cname) {
+        sdp2 += "a=ssrc:" + rtcpParameters.ssrc + " cname:" + rtcpParameters.cname + "\r\n";
+      }
+      return sdp2;
+    };
+    SDPUtils2.parseMsid = function(mediaSection) {
+      let parts;
+      const spec = SDPUtils2.matchPrefix(mediaSection, "a=msid:");
+      if (spec.length === 1) {
+        parts = spec[0].substring(7).split(" ");
+        return { stream: parts[0], track: parts[1] };
+      }
+      const planB = SDPUtils2.matchPrefix(mediaSection, "a=ssrc:").map((line) => SDPUtils2.parseSsrcMedia(line)).filter((msidParts) => msidParts.attribute === "msid");
+      if (planB.length > 0) {
+        parts = planB[0].value.split(" ");
+        return { stream: parts[0], track: parts[1] };
+      }
+    };
+    SDPUtils2.parseSctpDescription = function(mediaSection) {
+      const mline = SDPUtils2.parseMLine(mediaSection);
+      const maxSizeLine = SDPUtils2.matchPrefix(mediaSection, "a=max-message-size:");
+      let maxMessageSize;
+      if (maxSizeLine.length > 0) {
+        maxMessageSize = parseInt(maxSizeLine[0].substring(19), 10);
+      }
+      if (isNaN(maxMessageSize)) {
+        maxMessageSize = 65536;
+      }
+      const sctpPort = SDPUtils2.matchPrefix(mediaSection, "a=sctp-port:");
+      if (sctpPort.length > 0) {
+        return {
+          port: parseInt(sctpPort[0].substring(12), 10),
+          protocol: mline.fmt,
+          maxMessageSize
+        };
+      }
+      const sctpMapLines = SDPUtils2.matchPrefix(mediaSection, "a=sctpmap:");
+      if (sctpMapLines.length > 0) {
+        const parts = sctpMapLines[0].substring(10).split(" ");
+        return {
+          port: parseInt(parts[0], 10),
+          protocol: parts[1],
+          maxMessageSize
+        };
+      }
+    };
+    SDPUtils2.writeSctpDescription = function(media, sctp) {
+      let output = [];
+      if (media.protocol !== "DTLS/SCTP") {
+        output = [
+          "m=" + media.kind + " 9 " + media.protocol + " " + sctp.protocol + "\r\n",
+          "c=IN IP4 0.0.0.0\r\n",
+          "a=sctp-port:" + sctp.port + "\r\n"
+        ];
+      } else {
+        output = [
+          "m=" + media.kind + " 9 " + media.protocol + " " + sctp.port + "\r\n",
+          "c=IN IP4 0.0.0.0\r\n",
+          "a=sctpmap:" + sctp.port + " " + sctp.protocol + " 65535\r\n"
+        ];
+      }
+      if (sctp.maxMessageSize !== void 0) {
+        output.push("a=max-message-size:" + sctp.maxMessageSize + "\r\n");
+      }
+      return output.join("");
+    };
+    SDPUtils2.generateSessionId = function() {
+      return Math.random().toString().substr(2, 22);
+    };
+    SDPUtils2.writeSessionBoilerplate = function(sessId, sessVer, sessUser) {
+      let sessionId;
+      const version = sessVer !== void 0 ? sessVer : 2;
+      if (sessId) {
+        sessionId = sessId;
+      } else {
+        sessionId = SDPUtils2.generateSessionId();
+      }
+      const user = sessUser || "thisisadapterortc";
+      return "v=0\r\no=" + user + " " + sessionId + " " + version + " IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n";
+    };
+    SDPUtils2.getDirection = function(mediaSection, sessionpart) {
+      const lines = SDPUtils2.splitLines(mediaSection);
+      for (let i = 0; i < lines.length; i++) {
+        switch (lines[i]) {
+          case "a=sendrecv":
+          case "a=sendonly":
+          case "a=recvonly":
+          case "a=inactive":
+            return lines[i].substring(2);
+          default:
+        }
+      }
+      if (sessionpart) {
+        return SDPUtils2.getDirection(sessionpart);
+      }
+      return "sendrecv";
+    };
+    SDPUtils2.getKind = function(mediaSection) {
+      const lines = SDPUtils2.splitLines(mediaSection);
+      const mline = lines[0].split(" ");
+      return mline[0].substring(2);
+    };
+    SDPUtils2.isRejected = function(mediaSection) {
+      return mediaSection.split(" ", 2)[1] === "0";
+    };
+    SDPUtils2.parseMLine = function(mediaSection) {
+      const lines = SDPUtils2.splitLines(mediaSection);
+      const parts = lines[0].substring(2).split(" ");
+      return {
+        kind: parts[0],
+        port: parseInt(parts[1], 10),
+        protocol: parts[2],
+        fmt: parts.slice(3).join(" ")
+      };
+    };
+    SDPUtils2.parseOLine = function(mediaSection) {
+      const line = SDPUtils2.matchPrefix(mediaSection, "o=")[0];
+      const parts = line.substring(2).split(" ");
+      return {
+        username: parts[0],
+        sessionId: parts[1],
+        sessionVersion: parseInt(parts[2], 10),
+        netType: parts[3],
+        addressType: parts[4],
+        address: parts[5]
+      };
+    };
+    SDPUtils2.isValidSDP = function(blob) {
+      if (typeof blob !== "string" || blob.length === 0) {
+        return false;
+      }
+      const lines = SDPUtils2.splitLines(blob);
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].length < 2 || lines[i].charAt(1) !== "=") {
+          return false;
+        }
+      }
+      return true;
+    };
+    if (typeof module === "object") {
+      module.exports = SDPUtils2;
+    }
+  }
+});
+
+// src/limits.mjs
+var PRO_MAX_FILE = 10 * 1024 * 1024 * 1024;
+var PRO_SESSION_MS = 24 * 60 * 60 * 1e3;
+var PRO_PREVIEW = true;
+
+// src/license-config.mjs
+var LICENSE_CONFIG = Object.freeze({ "enabled": true, "endpoint": "https://pocketdrop-licenses-live.pocketdrop-licensing.workers.dev", "environment": "production", "checkout": "https://tasnimrimi.github.io/PocketDrop-Website/" });
+
+// src/licensing.mjs
+var storageKey = "pocketdrop-license-key-v1-" + LICENSE_CONFIG.environment;
+var validLicenseKey = (key) => typeof key === "string" && /^pd_[A-Za-z0-9_-]{43}$/.test(key);
+async function getLicenseKey(create = false) {
+  if (!chrome.storage?.local) {
+    if (create) throw new Error("Open Get Lifetime Access to start checkout.");
+    const result = await chrome.runtime.sendMessage({ target: "license-key", storageKey });
+    if (result?.error) throw new Error(result.error);
+    return validLicenseKey(result?.key) ? result.key : null;
+  }
+  return navigator.locks.request(storageKey, () => readOrCreateKey(create));
+}
+async function readOrCreateKey(create) {
+  let key = (await chrome.storage.local.get(storageKey))[storageKey];
+  if (validLicenseKey(key)) return key;
+  if (LICENSE_CONFIG.environment === "sandbox") {
+    key = (await chrome.storage.local.get("pocketdrop-license-key-v1"))["pocketdrop-license-key-v1"];
+    if (validLicenseKey(key)) {
+      await chrome.storage.local.set({ [storageKey]: key });
+      return key;
+    }
+  }
+  if (!create) return null;
+  key = "pd_" + btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32)))).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+  await chrome.storage.local.set({ [storageKey]: key });
+  return key;
+}
+async function checkLicense(key) {
+  key ||= await getLicenseKey();
+  if (!key) return { status: "pending" };
+  const response = await fetch(LICENSE_CONFIG.endpoint + "/v1/activation", {
+    method: "POST",
+    headers: { Authorization: "Bearer " + key },
+    cache: "no-store",
+    credentials: "omit",
+    signal: AbortSignal.timeout(1e4)
+  });
+  if (!response.ok) throw new Error("Could not check your licence. Please try again shortly.");
+  const result = await response.json();
+  if (result.environment !== LICENSE_CONFIG.environment || !["active", "pending", "revoked"].includes(result.status)) throw new Error("The licence response could not be verified.");
+  return result;
+}
+async function restoreLicense(key) {
+  key = key.trim();
+  if (!validLicenseKey(key)) throw new Error("Enter the complete PocketDrop licence key.");
+  const result = await checkLicense(key);
+  if (result.status !== "active") throw new Error("This key is not active. Check your payment or contact support.");
+  await navigator.locks.request(storageKey, () => chrome.storage.local.set({ [storageKey]: key }));
+}
+async function openCheckout() {
+  const key = await getLicenseKey(true), url = new URL(LICENSE_CONFIG.checkout);
+  url.hash = "activate=" + encodeURIComponent(key);
+  return chrome.tabs.create({ url: url.href });
+}
+function manageLicense() {
+  return chrome.tabs.create({ url: chrome.runtime.getURL("license.html") });
+}
+
+// src/crypto.mjs
+var utf8 = (text2) => new TextEncoder().encode(text2);
+var text = (bytes2) => new TextDecoder("utf-8", { fatal: true }).decode(bytes2);
+var random = (n) => crypto.getRandomValues(new Uint8Array(n));
+function b64(bytes2) {
+  if (typeof Uint8Array.prototype.toBase64 === "function") return new Uint8Array(bytes2).toBase64({ alphabet: "base64url", omitPadding: true });
+  let value = "";
+  const a = new Uint8Array(bytes2);
+  for (let i = 0; i < a.length; i += 8192) value += String.fromCharCode(...a.subarray(i, i + 8192));
+  return btoa(value).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
+}
+function unb64(value) {
+  if (typeof value !== "string" || !/^[A-Za-z0-9_-]*$/.test(value)) throw new Error("Invalid encoding");
+  if (typeof Uint8Array.fromBase64 === "function") return Uint8Array.fromBase64(value, { alphabet: "base64url" });
+  const binary = atob(value.replaceAll("-", "+").replaceAll("_", "/"));
+  const bytes2 = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes2[i] = binary.charCodeAt(i);
+  return bytes2;
+}
+var hash = async (bytes2) => b64(await crypto.subtle.digest("SHA-256", bytes2));
+var encode = (value) => utf8(JSON.stringify(value));
+var decode = (bytes2) => JSON.parse(text(bytes2));
+async function mac(secret, value) {
+  const key = await crypto.subtle.importKey("raw", unb64(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  return b64(await crypto.subtle.sign("HMAC", key, encode(value)));
+}
+async function checkMac(secret, value, signature) {
+  try {
+    const key = await crypto.subtle.importKey("raw", unb64(secret), { name: "HMAC", hash: "SHA-256" }, false, ["verify"]);
+    return await crypto.subtle.verify("HMAC", key, unb64(signature), encode(value));
+  } catch {
+    return false;
+  }
+}
+async function channelKeys(secret, transcript, role) {
+  const material = await crypto.subtle.importKey("raw", unb64(secret), "HKDF", false, ["deriveKey"]);
+  const salt = await crypto.subtle.digest("SHA-256", encode(transcript));
+  const derive = (direction) => crypto.subtle.deriveKey({ name: "HKDF", hash: "SHA-256", salt, info: utf8("PocketDrop personal v1 " + direction) }, material, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+  const [up, down] = await Promise.all([derive("phone-to-pc"), derive("pc-to-phone")]);
+  return role === "pc" ? { send: down, receive: up } : { send: up, receive: down };
+}
+function ivFor(sequence) {
+  if (!Number.isSafeInteger(sequence) || sequence < 1 || sequence > 4294967295) throw new Error("Session sequence exhausted");
+  const iv = new Uint8Array(12);
+  new DataView(iv.buffer).setUint32(8, sequence);
+  return iv;
+}
+async function sealFrame(key, sequence, value) {
+  const header = new Uint8Array(4);
+  new DataView(header.buffer).setUint32(0, sequence);
+  let data;
+  if (value.t === "chunk" && value.bytes instanceof Uint8Array) {
+    if (!/^[a-f0-9-]{36}$/.test(value.id) || !Number.isSafeInteger(value.index) || value.index < 0 || value.index > 4294967295 || value.bytes.length > 60 * 1024) throw new Error("Invalid binary chunk");
+    data = new Uint8Array(41 + value.bytes.length);
+    data[0] = 0;
+    data.set(utf8(value.id), 1);
+    new DataView(data.buffer).setUint32(37, value.index);
+    data.set(value.bytes, 41);
+  } else {
+    data = encode(value);
+    if (data.length > 2e4) throw new Error("Frame too large");
+  }
+  const encrypted = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv: ivFor(sequence), additionalData: header, tagLength: 128 }, key, data));
+  const result = new Uint8Array(4 + encrypted.length);
+  result.set(header);
+  result.set(encrypted, 4);
+  return result.buffer;
+}
+async function openFrame(key, sequence, frame) {
+  const bytes2 = new Uint8Array(frame);
+  if (bytes2.length < 20 || bytes2.length > 60 * 1024 + 61 || new DataView(bytes2.buffer, bytes2.byteOffset, 4).getUint32(0) !== sequence) throw new Error("Replayed, oversized, or out-of-order message");
+  const data = new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv: ivFor(sequence), additionalData: bytes2.subarray(0, 4), tagLength: 128 }, key, bytes2.subarray(4)));
+  if (data[0] === 0) {
+    if (data.length <= 41) throw new Error("Invalid binary chunk");
+    const id = text(data.subarray(1, 37));
+    if (!/^[a-f0-9-]{36}$/.test(id)) throw new Error("Invalid binary chunk");
+    return { t: "chunk", id, index: new DataView(data.buffer, data.byteOffset).getUint32(37), bytes: data.subarray(41) };
+  }
+  if (data.length > 2e4) throw new Error("Frame too large");
+  return decode(data);
+}
+function createPeerId() {
+  return "pd-" + Array.from(random(16), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+function parsePairing(value) {
+  if (typeof value !== "string" || value.length > 3e3) throw new Error("Invalid pairing link");
+  let fragment = value.trim();
+  if (fragment.includes("#")) fragment = fragment.slice(fragment.indexOf("#") + 1);
+  const pairing2 = decode(unb64(fragment));
+  if (pairing2.pro !== void 0 && pairing2.pro !== true) throw new Error("Invalid pairing mode.");
+  if (pairing2.network !== void 0 && (pairing2.network !== "direct" || pairing2.pro !== true)) throw new Error("Invalid direct pairing.");
+  if (pairing2.v !== 1 || !/^pd-[A-Za-z0-9_-]{32}$/.test(pairing2.id) || !/^[A-Za-z0-9_-]{43}$/.test(pairing2.secret) || !Number.isSafeInteger(pairing2.expires) || pairing2.expires <= Date.now() || pairing2.expires > Date.now() + (pairing2.pro === true ? PRO_SESSION_MS + 1e5 : 37e5)) throw new Error("Pairing expired or invalid. Scan a new QR code.");
+  return pairing2;
+}
+
+// src/library.mjs
+var MAX_FILE = 500 * 1024 * 1024;
+var MAX_LIBRARY = 5 * 1024 * 1024 * 1024;
+var Library = class {
+  constructor(name = "pocketdrop-personal-v1") {
+    this.name = name;
+  }
+  async init() {
+    this.db = await new Promise((resolve, reject) => {
+      const req = indexedDB.open(this.name, 2);
+      req.onupgradeneeded = () => {
+        for (const store of ["files", "contents", "folders", "keys", "chunks"]) if (!req.result.objectStoreNames.contains(store)) req.result.createObjectStore(store, { keyPath: "id" });
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    let key = await this.get("keys", "vault");
+    if (!key) {
+      const generated = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+      await this.tx(["keys", "folders"], (tx) => {
+        const request = tx.objectStore("keys").get("vault");
+        request.onsuccess = () => {
+          if (!request.result) {
+            tx.objectStore("keys").put({ id: "vault", key: generated });
+            tx.objectStore("folders").put({ id: "inbox", name: "Inbox", created: Date.now() });
+          }
+        };
+      });
+      key = await this.get("keys", "vault");
+    }
+    this.key = key.key;
+    return this;
+  }
+  tx(stores, fn) {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction(stores, "readwrite");
+      let reason;
+      const stop = (error) => {
+        reason = error;
+        tx.abort();
+      };
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(reason || tx.error);
+      tx.onabort = () => reject(reason || tx.error || new Error("Storage operation interrupted"));
+      try {
+        fn(tx, stop);
+      } catch (error) {
+        stop(error);
+      }
+    });
+  }
+  get(store, id) {
+    return new Promise((resolve, reject) => {
+      const req = this.db.transaction(store).objectStore(store).get(id);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+  all(store) {
+    return new Promise((resolve, reject) => {
+      const req = this.db.transaction(store).objectStore(store).getAll();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+  async folders() {
+    return (await this.all("folders")).sort((a, b) => a.id === "inbox" ? -1 : b.id === "inbox" ? 1 : a.created - b.created);
+  }
+  async createFolder(name) {
+    name = name.trim();
+    if (!name || name.length > 60) throw new Error("Use a folder name of 1\u201360 characters");
+    if (name.toLowerCase() === "all files") throw new Error("All files is the default folder. Choose another name.");
+    const folder = { id: crypto.randomUUID(), name, created: Date.now() };
+    await this.tx(["folders"], (tx, stop) => {
+      const req = tx.objectStore("folders").getAll();
+      req.onsuccess = () => {
+        if (req.result.length >= 50) return stop(new Error("Folder limit reached (50)"));
+        if (req.result.some((f) => f.name.toLocaleLowerCase() === name.toLocaleLowerCase())) return stop(new Error("A folder with that name already exists"));
+        tx.objectStore("folders").add(folder);
+      };
+    });
+    return folder;
+  }
+  async save(bytes2, { name, type = "" }, folderId = "inbox") {
+    if (!(bytes2 instanceof Uint8Array) || bytes2.length > MAX_FILE) throw new Error("File exceeds the 500 MB limit");
+    if (typeof name !== "string" || !name || name.length > 240) throw new Error("Invalid filename");
+    const id = crypto.randomUUID(), iv = random(12), metaIV = random(12);
+    const data = await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: encode(["content", id]) }, this.key, bytes2);
+    const metadata2 = await crypto.subtle.encrypt({ name: "AES-GCM", iv: metaIV, additionalData: encode(["metadata", id]) }, this.key, encode({ name, type }));
+    const file = { id, folderId, size: bytes2.length, created: Date.now(), metaIV, metadata: metadata2 };
+    await this.tx(["files", "contents", "folders"], (tx, stop) => {
+      const folders2 = tx.objectStore("folders").get(folderId);
+      folders2.onsuccess = () => {
+        if (!folders2.result) return stop(new Error("Destination folder no longer exists. Choose a folder and try again."));
+        const all = tx.objectStore("files").getAll();
+        all.onsuccess = () => {
+          if (all.result.length >= 500 || all.result.reduce((sum, f) => sum + f.size, 0) + file.size > MAX_LIBRARY) return stop(new Error("Library limit reached. Download and delete files to free space (5 GB / 500 files)."));
+          tx.objectStore("files").add(file);
+          tx.objectStore("contents").add({ id, iv, data });
+        };
+      };
+    });
+    return id;
+  }
+  async files(folderId = null) {
+    const rows = await this.all("files");
+    const result = [];
+    for (const file of rows) {
+      if (file.pending) continue;
+      if (folderId && file.folderId !== folderId) continue;
+      const meta = decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: file.metaIV, additionalData: encode(["metadata", file.id]) }, this.key, file.metadata));
+      result.push({ id: file.id, folderId: file.folderId, size: file.size, created: file.created, ...meta });
+    }
+    return result.sort((a, b) => b.created - a.created);
+  }
+  async read(id) {
+    const row = await this.get("files", id);
+    if (row?.chunked) {
+      if (row.size > 50 * 1024 * 1024) throw new Error("Large files must be streamed");
+      const bytes2 = new Uint8Array(row.size);
+      let offset = 0;
+      for await (const part of this.stream(id)) {
+        bytes2.set(part, offset);
+        offset += part.length;
+      }
+      return bytes2;
+    }
+    const content = await this.get("contents", id);
+    if (!content) throw new Error("File not found");
+    return new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv: content.iv, additionalData: encode(["content", id]) }, this.key, content.data));
+  }
+  async move(id, folderId) {
+    await this.tx(["files", "folders"], (tx, stop) => {
+      const destination = tx.objectStore("folders").get(folderId);
+      destination.onsuccess = () => {
+        if (!destination.result) return stop(new Error("Folder not found"));
+        const file = tx.objectStore("files").get(id);
+        file.onsuccess = () => {
+          if (!file.result) return stop(new Error("File not found"));
+          tx.objectStore("files").put({ ...file.result, folderId });
+        };
+      };
+    });
+  }
+  async deleteFile(id) {
+    await this.tx(["files", "contents", "chunks"], (tx) => {
+      tx.objectStore("files").delete(id);
+      tx.objectStore("contents").delete(id);
+      tx.objectStore("chunks").delete(IDBKeyRange.bound(id + ":", id + ":\uFFFF"));
+    });
+  }
+  async begin(metadata2, folderId = "inbox") {
+    const { name, type = "", size } = metadata2;
+    if (!Number.isSafeInteger(size) || size < 0 || size > MAX_FILE || typeof name !== "string" || !name || name.length > 240) throw new Error("Choose a file up to 500 MB");
+    const estimate = await globalThis.navigator?.storage?.estimate?.();
+    if (estimate?.quota && estimate.quota - estimate.usage < size + 16 * 1024 * 1024) throw new Error("Not enough browser storage. Save or remove files first.");
+    const id = crypto.randomUUID(), metaIV = random(12);
+    const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv: metaIV, additionalData: encode(["metadata", id]) }, this.key, encode({ name, type }));
+    const row = { id, folderId, size, created: Date.now(), metaIV, metadata: encrypted, pending: true, owner: metadata2.owner || "local", chunked: true, chunks: 0 };
+    await this.tx(["files", "folders"], (tx, stop) => {
+      const dest = tx.objectStore("folders").get(folderId);
+      dest.onsuccess = () => {
+        if (!dest.result) return stop(new Error("Destination folder no longer exists"));
+        const request = tx.objectStore("files").getAll();
+        request.onsuccess = () => {
+          if (request.result.length >= 500 || request.result.reduce((n, f) => n + f.size, 0) + size > MAX_LIBRARY) return stop(new Error("Temporary storage is full. Save or remove files first (5 GB / 500 files)."));
+          tx.objectStore("files").add(row);
+        };
+      };
+    });
+    let buffer = new Uint8Array(1024 * 1024), used = 0, received = 0, index = 0, ended = false;
+    const flush = async () => {
+      if (!used) return;
+      const iv = random(12), i = index++;
+      const data = await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: encode(["chunk", id, i]) }, this.key, buffer.subarray(0, used));
+      if (ended) throw new Error("Transfer cancelled");
+      await this.tx(["chunks"], (tx) => tx.objectStore("chunks").put({ id: id + ":" + String(i).padStart(8, "0"), iv, data }));
+      used = 0;
+    };
+    return {
+      id,
+      write: async (bytes2) => {
+        if (ended || received + bytes2.length > size) throw new Error("Invalid temporary file size");
+        received += bytes2.length;
+        for (let offset = 0; offset < bytes2.length; ) {
+          const n = Math.min(buffer.length - used, bytes2.length - offset);
+          buffer.set(bytes2.subarray(offset, offset + n), used);
+          used += n;
+          offset += n;
+          if (used === buffer.length) await flush();
+        }
+      },
+      commit: async () => {
+        if (ended || received !== size) throw new Error("Incomplete file");
+        await flush();
+        ended = true;
+        buffer = null;
+        await this.tx(["files"], (tx, stop) => {
+          const req = tx.objectStore("files").get(id);
+          req.onsuccess = () => {
+            if (!req.result) return stop(new Error("File was removed"));
+            tx.objectStore("files").put({ ...req.result, pending: false, chunks: index });
+          };
+        });
+        return id;
+      },
+      abort: async () => {
+        ended = true;
+        buffer = null;
+        await this.deleteFile(id);
+      }
+    };
+  }
+  async saveFile(file, folderId = "inbox", onProgress = () => {
+  }) {
+    const sink = await this.begin(file, folderId);
+    try {
+      let loaded = 0;
+      for await (const bytes2 of file.stream()) {
+        await sink.write(bytes2);
+        loaded += bytes2.length;
+        onProgress(loaded, file.size);
+      }
+      return await sink.commit();
+    } catch (error) {
+      await sink.abort();
+      throw error;
+    }
+  }
+  async *stream(id) {
+    const row = await this.get("files", id);
+    if (!row || row.pending) throw new Error("File not found");
+    if (!row.chunked) {
+      yield await this.read(id);
+      return;
+    }
+    let total = 0;
+    for (let index = 0; index < row.chunks; index++) {
+      const chunk = await this.get("chunks", id + ":" + String(index).padStart(8, "0"));
+      if (!chunk) throw new Error("Temporary file is incomplete");
+      const bytes2 = new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv: chunk.iv, additionalData: encode(["chunk", id, index]) }, this.key, chunk.data));
+      total += bytes2.length;
+      yield bytes2;
+    }
+    if (total !== row.size) throw new Error("Temporary file size mismatch");
+  }
+  async source(id) {
+    const file = (await this.files()).find((f) => f.id === id);
+    if (!file) throw new Error("File not found");
+    return { ...file, stream: () => this.stream(id), arrayBuffer: async () => (await this.read(id)).buffer };
+  }
+  async exportFile(id, token) {
+    const source = await this.source(id);
+    const estimate = await navigator.storage.estimate();
+    if (estimate.quota && estimate.quota - estimate.usage < source.size + 16 * 1024 * 1024) throw new Error("Not enough space to prepare this save. Your temporary file is still safe.");
+    const root = await navigator.storage.getDirectory();
+    const dir = await root.getDirectoryHandle("pocketdrop-exports", { create: true });
+    const handle = await dir.getFileHandle(token, { create: true });
+    const writer = await handle.createWritable();
+    try {
+      for await (const bytes2 of source.stream()) await writer.write(bytes2);
+      await writer.close();
+    } catch (error) {
+      await writer.abort().catch(() => {
+      });
+      await dir.removeEntry(token).catch(() => {
+      });
+      throw error;
+    }
+    const file = new File([await handle.getFile()], source.name, { type: source.type || "application/octet-stream" });
+    return { url: URL.createObjectURL(file), name: source.name };
+  }
+  async removeExport(token) {
+    try {
+      const root = await navigator.storage.getDirectory();
+      const dir = await root.getDirectoryHandle("pocketdrop-exports");
+      await dir.removeEntry(token);
+    } catch (error) {
+      if (error.name !== "NotFoundError") throw error;
+    }
+  }
+  async recoverPending(owner) {
+    for (const file of await this.all("files")) if (file.pending && (!owner || file.owner === owner)) await this.deleteFile(file.id);
+  }
+  async deleteFolder(id) {
+    if (id === "inbox") throw new Error("Inbox cannot be removed");
+    await this.tx(["folders", "files"], (tx) => {
+      tx.objectStore("folders").delete(id);
+      const req = tx.objectStore("files").getAll();
+      req.onsuccess = () => {
+        for (const f of req.result) if (f.folderId === id) tx.objectStore("files").put({ ...f, folderId: "inbox" });
+      };
+    });
+  }
+  close() {
+    this.db.close();
+  }
+};
+
+// src/transfer.mjs
+var CHUNK = 12 * 1024;
+var BINARY_CHUNK = 60 * 1024;
+function bounded(operation, ms, message) {
+  let timer;
+  return Promise.race([operation, new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), ms);
+  })]).finally(() => clearTimeout(timer));
+}
+var Transfer = class {
+  constructor({ keys, send, close = () => {
+  }, onFile, onReceive, onFolders = () => {
+  }, onProgress = () => {
+  }, onError = () => {
+  }, onDisconnect = () => {
+  }, binaryChunks = true, ioTimeout = 3e4 }) {
+    Object.assign(this, { keys, transport: send, closeTransport: close, onFile, onReceive, onFolders, onProgress, onError, onDisconnect, binaryChunks });
+    this.ioTimeout = ioTimeout;
+    this.tx = 0;
+    this.rx = 0;
+    this.txChain = Promise.resolve();
+    this.rxChain = Promise.resolve();
+    this.waits = /* @__PURE__ */ new Map();
+    this.incoming = null;
+    this.outgoing = null;
+    this.closed = false;
+    this.discarded = /* @__PURE__ */ new Set();
+  }
+  send(value) {
+    const job = this.txChain.then(async () => {
+      if (this.closed) throw new Error("Phone disconnected");
+      const frame = await sealFrame(this.keys.send, ++this.tx, value);
+      await this.transport(frame);
+    });
+    this.txChain = job.catch(() => {
+    });
+    return job;
+  }
+  receive(frame) {
+    this.rxChain = this.rxChain.then(async () => {
+      if (this.closed) return;
+      if (!(frame instanceof ArrayBuffer) && !ArrayBuffer.isView(frame)) throw new Error("Invalid encrypted frame");
+      const message = await openFrame(this.keys.receive, this.rx + 1, frame);
+      this.rx++;
+      await this.handle(message);
+    }).catch((error) => {
+      this.onError(error);
+      this.close(error.message);
+    });
+    return this.rxChain;
+  }
+  wait(id, kind, ms = 6e4) {
+    const key = id + ":" + kind;
+    let resolve, reject;
+    const promise = new Promise((a, b) => {
+      resolve = a;
+      reject = b;
+    });
+    const timer = setTimeout(() => {
+      this.waits.delete(key);
+      reject(new Error("Transfer timed out. Keep Chrome running and the phone page open, then try again."));
+    }, ms);
+    this.waits.set(key, { resolve, reject, timer });
+    return promise;
+  }
+  settle(id, kind, error, value) {
+    for (const [key, wait] of this.waits) if (key === id + ":" + kind || error && key.startsWith(id + ":")) {
+      clearTimeout(wait.timer);
+      this.waits.delete(key);
+      error ? wait.reject(error) : wait.resolve(value);
+    }
+  }
+  async handle(m) {
+    if (!m || typeof m.t !== "string") throw new Error("Invalid transfer message");
+    if (m.t === "disconnect") {
+      this.onDisconnect();
+      this.close("Disconnected");
+      return;
+    }
+    if (m.t === "ready") {
+      this.settle(m.id, m.t, null, { binary: m.binaryChunks === true, stream: m.stream === true });
+      return;
+    }
+    if (m.t === "ack") {
+      this.settle(m.id, "ack:" + m.index);
+      return;
+    }
+    if (m.t === "done") {
+      this.settle(m.id, m.t, null, typeof m.folderName === "string" && m.folderName.length <= 60 ? m.folderName : void 0);
+      return;
+    }
+    if (m.t === "reject") {
+      if (this.outgoing?.id === m.id) {
+        this.outgoing.cancelled = true;
+        this.outgoing.reason = typeof m.reason === "string" ? m.reason.slice(0, 240) : "Transfer rejected";
+      }
+      this.settle(m.id, "", new Error(typeof m.reason === "string" ? m.reason.slice(0, 240) : "Transfer rejected"));
+      return;
+    }
+    if (m.t === "folders") {
+      if (!Array.isArray(m.folders) || m.folders.length > 50 || m.folders.some((f) => typeof f.id !== "string" || f.id.length > 64 || typeof f.name !== "string" || f.name.length > 60)) throw new Error("Invalid folder list");
+      this.streamAll = m.streamAll === true;
+      this.onFolders(m.folders);
+      return;
+    }
+    if (m.t === "cancel") {
+      this.discarded.delete(m.id);
+      if (this.incoming?.id === m.id) {
+        const file2 = this.incoming;
+        clearTimeout(file2.timer);
+        this.incoming = null;
+        void file2.sink?.abort().catch(() => {
+        });
+        this.onProgress({ incoming: true, cancelled: true });
+      }
+      return;
+    }
+    if (this.discarded.has(m.id)) {
+      if (m.t === "end") this.discarded.delete(m.id);
+      return;
+    }
+    if (m.t === "offer") {
+      if (this.incoming || !/^[a-f0-9-]{36}$/.test(m.id) || typeof m.name !== "string" || !m.name || m.name.length > 240 || !Number.isSafeInteger(m.size) || m.size < 0 || m.size > MAX_FILE || !/^[A-Za-z0-9_-]{43}$/.test(m.hash) || typeof m.type !== "string" || m.type.length > 100 || m.folderId && (typeof m.folderId !== "string" || m.folderId.length > 64)) {
+        await this.send({ t: "reject", id: m.id, reason: "File is invalid, too large, or another file is arriving." });
+        return;
+      }
+      if (m.stream && !this.onReceive || !m.stream && m.size > 50 * 1024 * 1024) {
+        await this.send({ t: "reject", id: m.id, reason: "Update PocketDrop and reload the phone page for large files." });
+        return;
+      }
+      let sink;
+      const preparing = { id: m.id };
+      this.incoming = preparing;
+      this.onProgress({ incoming: true, name: m.name, loaded: 0, total: m.size });
+      try {
+        if (m.stream) {
+          let abandoned = false;
+          const opening = Promise.resolve().then(() => this.onReceive(m)).then((value) => {
+            if (abandoned) void value?.abort().catch(() => {
+            });
+            return value;
+          });
+          try {
+            sink = await bounded(opening, this.ioTimeout, "PC folder did not respond. Choose the folder again and retry.");
+          } catch (error) {
+            abandoned = true;
+            throw error;
+          }
+        }
+      } catch (error) {
+        if (this.incoming !== preparing) return;
+        this.incoming = null;
+        this.onProgress({ incoming: true, failed: true });
+        this.onError(error);
+        await this.send({ t: "reject", id: m.id, reason: error.message.slice(0, 240) });
+        return;
+      }
+      if (this.closed || this.incoming !== preparing) {
+        void sink?.abort().catch(() => {
+        });
+        return;
+      }
+      this.incoming = { ...m, sink, digests: [], binaryChunks: this.binaryChunks && m.binaryChunks === true, parts: [], received: 0, index: 0, lastProgress: 0 };
+      this.refreshTimeout();
+      await this.send({ t: "ready", id: m.id, binaryChunks: this.incoming.binaryChunks, stream: Boolean(sink) });
+      return;
+    }
+    const file = this.incoming;
+    if (!file || file.id !== m.id) throw new Error("Unexpected file message");
+    if (m.t === "chunk") {
+      const binary = m.bytes instanceof Uint8Array;
+      if (m.index !== file.index || (binary ? !file.binaryChunks : typeof m.bytes !== "string" || m.bytes.length > 16384)) throw new Error("Invalid file chunk");
+      const bytes2 = binary ? m.bytes : unb64(m.bytes);
+      if (!bytes2.length || bytes2.length > (binary ? BINARY_CHUNK : CHUNK) || file.received + bytes2.length > file.size) throw new Error("File size mismatch");
+      if (file.sink) {
+        try {
+          await bounded(file.sink.write(bytes2), this.ioTimeout, "Writing to the PC folder stalled. Check free space and folder access, then retry.");
+          file.digests.push(unb64(await hash(bytes2)));
+        } catch (error) {
+          clearTimeout(file.timer);
+          this.incoming = null;
+          this.ignoreIncoming(file.id);
+          this.onProgress({ incoming: true, failed: true });
+          this.onError(error);
+          void file.sink.abort().catch(() => {
+          });
+          await this.send({ t: "reject", id: file.id, reason: error.message.slice(0, 240) });
+          return;
+        }
+        if (this.incoming !== file) return;
+      } else file.parts.push(bytes2);
+      file.received += bytes2.length;
+      file.index++;
+      this.refreshTimeout();
+      if (Date.now() - file.lastProgress >= 100 || file.received === file.size) {
+        file.lastProgress = Date.now();
+        this.onProgress({ incoming: true, name: file.name, loaded: file.received, total: file.size });
+      }
+      if (file.sink && file.index % 16 === 0) await this.send({ t: "ack", id: file.id, index: file.index });
+      return;
+    }
+    if (m.t === "end") {
+      file.saving = true;
+      clearTimeout(file.timer);
+      try {
+        if (file.received !== file.size) throw new Error("Incomplete file");
+        let folderName;
+        if (file.sink) {
+          if (await digest(file.digests) !== m.hash) throw new Error("File integrity check failed");
+          folderName = await bounded(file.sink.commit(), this.ioTimeout * 2, "Save was not confirmed. Check the PC folder before retrying.");
+        } else {
+          const bytes2 = new Uint8Array(file.size);
+          let offset = 0;
+          for (const part of file.parts) {
+            bytes2.set(part, offset);
+            offset += part.length;
+          }
+          file.parts = [];
+          if (await hash(bytes2) !== file.hash) throw new Error("File integrity check failed");
+          folderName = await bounded(this.onFile(bytes2, { name: file.name, type: file.type, folderId: file.folderId }), this.ioTimeout * 2, "Save was not confirmed. Check the PC folder before retrying.");
+        }
+        await this.send({ t: "done", id: file.id, ...typeof folderName === "string" ? { folderName } : {} });
+        this.onProgress({ incoming: true, complete: true, name: file.name });
+      } catch (error) {
+        this.incoming = null;
+        void file.sink?.abort().catch(() => {
+        });
+        this.onProgress({ incoming: true, failed: true });
+        this.onError(error);
+        await this.send({ t: "reject", id: file.id, reason: error.message.slice(0, 240) });
+      } finally {
+        this.incoming = null;
+      }
+      return;
+    }
+    throw new Error("Unknown transfer message");
+  }
+  refreshTimeout() {
+    clearTimeout(this.incoming.timer);
+    this.incoming.timer = setTimeout(() => {
+      const id = this.incoming?.id;
+      void this.incoming?.sink?.abort().catch(() => {
+      });
+      this.incoming = null;
+      if (id) {
+        this.ignoreIncoming(id);
+        this.onProgress({ incoming: true, failed: true });
+        this.onError(new Error("Receive timed out. Send the file again."));
+        void this.send({ t: "reject", id, reason: "Receive timed out. Send the file again." }).catch(() => {
+        });
+      }
+    }, 12e4);
+  }
+  async sendFile(file, folderId = "", onProgress = () => {
+  }) {
+    if (this.closed) throw new Error("Connect your phone first");
+    if (this.outgoing) throw new Error("Another file is already sending");
+    if (file.size > MAX_FILE) throw new Error("Choose a file up to 500 MB");
+    const id = crypto.randomUUID();
+    this.outgoing = { id, cancelled: false };
+    try {
+      const streaming = file.size > 50 * 1024 * 1024 || this.streamAll === true;
+      const bytes2 = streaming ? null : new Uint8Array(await file.arrayBuffer());
+      const ready = this.wait(id, "ready");
+      ready.catch(() => {
+      });
+      await this.send({ t: "offer", id, name: file.name.slice(0, 240), type: file.type.slice(0, 100), size: file.size, hash: streaming ? "A".repeat(43) : await hash(bytes2), folderId, binaryChunks: this.binaryChunks, stream: streaming });
+      const capabilities = await ready;
+      if (streaming && !capabilities.stream) throw new Error("Update PocketDrop and reload the phone page for large files.");
+      const binary = capabilities.binary && this.binaryChunks;
+      const chunkSize = binary ? BINARY_CHUNK : CHUNK;
+      let lastProgress = 0, loaded = 0, index = 0;
+      const digests = [];
+      const source = streaming ? file.stream() : [bytes2];
+      for await (const chunk of chunks(source, chunkSize)) {
+        if (this.outgoing.cancelled) throw new Error(this.outgoing.reason || "Transfer cancelled");
+        const ack = streaming && (index + 1) % 16 === 0 ? this.wait(id, "ack:" + (index + 1)) : null;
+        ack?.catch(() => {
+        });
+        if (streaming) digests.push(unb64(await hash(chunk)));
+        await this.send({ t: "chunk", id, index: index++, bytes: binary ? chunk : b64(chunk) });
+        if (ack) await ack;
+        loaded += chunk.length;
+        if (Date.now() - lastProgress >= 100 || loaded === file.size) {
+          lastProgress = Date.now();
+          onProgress(loaded, file.size);
+        }
+      }
+      if (loaded !== file.size) throw new Error("Source file changed during transfer");
+      if (this.outgoing.cancelled) throw new Error(this.outgoing.reason || "Transfer cancelled");
+      const done = this.wait(id, "done", 12e4);
+      done.catch(() => {
+      });
+      await this.send({ t: "end", id, ...streaming ? { hash: await digest(digests) } : {} });
+      return await done;
+    } catch (error) {
+      this.settle(id, "", error);
+      if (!this.closed) await this.send({ t: "cancel", id }).catch(() => {
+      });
+      throw error;
+    } finally {
+      this.outgoing = null;
+    }
+  }
+  ignoreIncoming(id) {
+    this.discarded.add(id);
+    if (this.discarded.size > 32) this.discarded.delete(this.discarded.values().next().value);
+  }
+  cancel() {
+    if (this.outgoing) {
+      this.outgoing.cancelled = true;
+      this.settle(this.outgoing.id, "", new Error("Transfer cancelled"));
+    }
+    if (this.incoming && !this.incoming.saving) {
+      const id = this.incoming.id;
+      clearTimeout(this.incoming.timer);
+      void this.incoming.sink?.abort().catch(() => {
+      });
+      this.incoming = null;
+      this.ignoreIncoming(id);
+      this.onProgress({ incoming: true, cancelled: true });
+      void this.send({ t: "reject", id, reason: "Transfer cancelled by receiver" }).catch(() => {
+      });
+    }
+  }
+  close(reason = "Device disconnected. Incomplete files were discarded.") {
+    if (this.closed) return;
+    this.closed = true;
+    clearTimeout(this.incoming?.timer);
+    void this.incoming?.sink?.abort().catch(() => {
+    });
+    this.incoming = null;
+    for (const w of this.waits.values()) {
+      clearTimeout(w.timer);
+      w.reject(new Error(reason));
+    }
+    this.waits.clear();
+    this.closeTransport();
+  }
+};
+async function digest(parts) {
+  const joined = new Uint8Array(parts.length * 32);
+  parts.forEach((part, index) => joined.set(part, index * 32));
+  return hash(joined);
+}
+async function* chunks(source, size) {
+  let buffer = new Uint8Array(size), used = 0;
+  for await (const bytes2 of iterate(source)) {
+    for (let offset = 0; offset < bytes2.length; ) {
+      const n = Math.min(size - used, bytes2.length - offset);
+      buffer.set(bytes2.subarray(offset, offset + n), used);
+      used += n;
+      offset += n;
+      if (used === size) {
+        yield buffer;
+        buffer = new Uint8Array(size);
+        used = 0;
+      }
+    }
+  }
+  if (used) yield buffer.subarray(0, used);
+}
+async function* iterate(source) {
+  if (source.getReader) {
+    const reader = source.getReader();
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) return;
+        yield value;
+      }
+    } finally {
+      await reader.cancel().catch(() => {
+      });
+      reader.releaseLock();
+    }
+  } else yield* source;
+}
+
+// src/resumable.mjs
+var validId = (id) => typeof id === "string" && /^[a-f0-9-]{36}$/.test(id);
+var metadata = (m) => JSON.stringify([m.id, m.name, m.type, m.size]);
+async function bounded2(operation, message) {
+  let timer;
+  try {
+    return await Promise.race([operation, new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error(message)), 3e4);
+    })]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+async function digest2(parts) {
+  const bytes2 = new Uint8Array(parts.length * 32);
+  parts.forEach((part, index) => bytes2.set(part, index * 32));
+  return hash(bytes2);
+}
+var ResumeState = class {
+  incoming = null;
+  completed = /* @__PURE__ */ new Map();
+  outgoing = /* @__PURE__ */ new Map();
+  chain = Promise.resolve();
+  disposed = false;
+  async clear() {
+    this.disposed = true;
+    await this.chain.catch(() => {
+    });
+    await this.incoming?.sink.abort().catch(() => {
+    });
+    this.incoming = null;
+    this.completed.clear();
+    this.outgoing.clear();
+  }
+};
+var ResumableTransfer = class extends Transfer {
+  constructor(options) {
+    super(options);
+    this.resume = options.resumeState;
+    this.maxFileSize = options.maxFileSize || MAX_FILE;
+  }
+  handle(message) {
+    const job = this.resume.chain.then(() => this.handleResume(message));
+    this.resume.chain = job.catch(() => {
+    });
+    return job;
+  }
+  async handleResume(m) {
+    if (this.closed || this.resume.disposed) return;
+    if (m.t === "folders") {
+      if (Array.isArray(m.folders) && m.folders.length <= 50 && m.folders.every((f) => typeof f.id === "string" && f.id.length <= 64 && typeof f.name === "string" && f.name.length <= 60)) this.onFolders(m.folders);
+      return;
+    }
+    if (m.t === "disconnect") {
+      this.onDisconnect();
+      this.close();
+      return;
+    }
+    if (!validId(m.id)) throw new Error("Invalid PC transfer identifier");
+    if (m.t === "r-ready" || m.t === "r-done" || m.t === "r-ack") {
+      this.settle(m.id, m.t === "r-ack" ? "r-ack:" + m.index : m.t, null, m);
+      return;
+    }
+    if (m.t === "r-reject") {
+      const error = new Error(String(m.reason || "Transfer rejected").slice(0, 240));
+      error.permanent = true;
+      if (this.outgoing?.id === m.id) {
+        this.outgoing.cancelled = true;
+        this.outgoing.reason = error.message;
+      }
+      this.settle(m.id, "", error);
+      return;
+    }
+    if (m.t === "r-cancel") {
+      this.ignoreIncoming(m.id);
+      const current2 = this.resume.incoming;
+      if (current2?.id === m.id) {
+        await current2.sink.abort();
+        this.resume.incoming = this.incoming = null;
+        this.onProgress({ incoming: true, cancelled: true });
+      }
+      return;
+    }
+    if (m.t === "r-offer") {
+      if (typeof m.name !== "string" || !m.name || m.name.length > 240 || typeof m.type !== "string" || m.type.length > 100 || !Number.isSafeInteger(m.size) || m.size < 0 || m.size > this.maxFileSize) {
+        await this.send({ t: "r-reject", id: m.id, reason: "File size, name, or type is not supported by this receiver." });
+        return;
+      }
+      const old = this.resume.completed.get(m.id);
+      if (old) {
+        if (old.metadata !== metadata(m)) throw new Error("Resumed file metadata changed");
+        await this.send({ t: "r-ready", id: m.id, complete: true, folder: old.folder });
+        return;
+      }
+      let current2 = this.resume.incoming;
+      if (current2 && metadata(current2) !== metadata(m)) {
+        await this.send({ t: "r-reject", id: m.id, reason: "Another file is paused or arriving. Cancel it before sending another." });
+        return;
+      }
+      if (!current2) {
+        try {
+          let abandoned = false;
+          const opening = Promise.resolve().then(() => this.onReceive(m)).then((sink2) => {
+            if (abandoned) void sink2.abort().catch(() => {
+            });
+            return sink2;
+          });
+          let sink;
+          try {
+            sink = await bounded2(opening, "The PC folder did not respond. Choose it again and retry.");
+          } catch (error) {
+            abandoned = true;
+            throw error;
+          }
+          current2 = { ...m, sink, received: 0, index: 0, digests: [] };
+          this.resume.incoming = current2;
+        } catch (error) {
+          await this.send({ t: "r-reject", id: m.id, reason: error.message.slice(0, 240) });
+          this.onError(error);
+          return;
+        }
+      }
+      this.discarded.delete(m.id);
+      this.incoming = current2;
+      this.onProgress({ incoming: true, name: current2.name, loaded: current2.received, total: current2.size });
+      await this.send({ t: "r-ready", id: m.id, offset: current2.received, index: current2.index });
+      return;
+    }
+    if (this.discarded.has(m.id)) return;
+    const current = this.resume.incoming;
+    if (!current || m.id !== current.id) throw new Error("Unexpected PC transfer message");
+    if (m.t === "chunk") {
+      if (!(m.bytes instanceof Uint8Array) || m.index !== current.index || m.bytes.length !== Math.min(BINARY_CHUNK, current.size - current.received) || !m.bytes.length) throw new Error("Invalid resumed chunk");
+      try {
+        await bounded2(current.sink.write(m.bytes), "Writing to the chosen folder stalled. Check folder access and retry.");
+        current.digests.push(unb64(await hash(m.bytes)));
+        current.received += m.bytes.length;
+        current.index++;
+      } catch (error) {
+        await this.rejectIncoming(current, error);
+        return;
+      }
+      if (!current.lastProgress || Date.now() - current.lastProgress >= 100 || current.received === current.size) {
+        current.lastProgress = Date.now();
+        this.onProgress({ incoming: true, name: current.name, loaded: current.received, total: current.size });
+      }
+      if (current.index % 16 === 0) await this.send({ t: "r-ack", id: m.id, index: current.index });
+      return;
+    }
+    if (m.t === "r-end") {
+      try {
+        if (current.received !== current.size || await digest2(current.digests) !== m.hash) throw new Error("File integrity check failed");
+        const folder = await bounded2(current.sink.commit(), "Save was not confirmed. Check the PC folder before retrying.");
+        this.resume.completed.set(m.id, { metadata: metadata(current), folder });
+        if (this.resume.completed.size > 64) this.resume.completed.delete(this.resume.completed.keys().next().value);
+        this.resume.incoming = this.incoming = null;
+        this.onProgress({ incoming: true, complete: true, name: current.name });
+        await this.send({ t: "r-done", id: m.id, folder });
+      } catch (error) {
+        if (this.resume.completed.has(m.id)) throw error;
+        await this.rejectIncoming(current, error);
+      }
+      return;
+    }
+    throw new Error("Unknown PC transfer message");
+  }
+  async rejectIncoming(current, error) {
+    this.ignoreIncoming(current.id);
+    await current.sink.abort().catch(() => {
+    });
+    this.resume.incoming = this.incoming = null;
+    this.onProgress({ incoming: true, failed: true });
+    this.onError(error);
+    await this.send({ t: "r-reject", id: current.id, reason: error.message.slice(0, 240) });
+  }
+  async sendFile(file, folderId = "", onProgress = () => {
+  }) {
+    if (this.closed || this.resume.disposed) throw new Error("Device disconnected");
+    if (this.outgoing) throw new Error("Another file is already sending");
+    if (!validId(file.id) || !Number.isSafeInteger(file.size) || file.size < 0 || file.size > this.maxFileSize || typeof file.name !== "string" || !file.name || file.name.length > 240 || typeof file.type !== "string" || file.type.length > 100) {
+      const error = new Error("Invalid queued PC file: check its size, name, and type.");
+      error.permanent = true;
+      throw error;
+    }
+    const id = file.id;
+    let saved = this.resume.outgoing.get(id);
+    if (!saved) {
+      saved = { digests: [] };
+      this.resume.outgoing.set(id, saved);
+    }
+    this.outgoing = { id, cancelled: false };
+    try {
+      const ready = this.wait(id, "r-ready", 3e4);
+      ready.catch(() => {
+      });
+      await this.send({ t: "r-offer", id, name: file.name, type: file.type, size: file.size });
+      const response = await ready;
+      if (response.complete === true) {
+        this.resume.outgoing.delete(id);
+        return response.folder;
+      }
+      const { offset, index } = response;
+      if (!Number.isSafeInteger(offset) || offset < 0 || offset > file.size || !Number.isSafeInteger(index) || index !== Math.ceil(offset / BINARY_CHUNK) || offset !== file.size && offset % BINARY_CHUNK || index > saved.digests.length) throw new Error("Invalid resume checkpoint");
+      saved.digests.length = index;
+      let loaded = offset, next = index, lastProgress = 0;
+      onProgress(loaded, file.size);
+      for await (const bytes2 of fixedChunks(file.streamFrom ? file.streamFrom(offset) : skipBytes(file.stream(), offset))) {
+        if (this.outgoing.cancelled) {
+          const e = new Error(this.outgoing.reason || "Transfer cancelled");
+          e.permanent = true;
+          throw e;
+        }
+        saved.digests.push(unb64(await hash(bytes2)));
+        const ack = (next + 1) % 16 === 0 ? this.wait(id, "r-ack:" + (next + 1), 3e4) : null;
+        ack?.catch(() => {
+        });
+        await this.send({ t: "chunk", id, index: next++, bytes: bytes2 });
+        if (ack) await ack;
+        loaded += bytes2.length;
+        if (Date.now() - lastProgress >= 100 || loaded === file.size) {
+          lastProgress = Date.now();
+          onProgress(loaded, file.size);
+        }
+      }
+      if (loaded !== file.size) throw new Error("Source file changed");
+      const done = this.wait(id, "r-done", 6e4);
+      done.catch(() => {
+      });
+      await this.send({ t: "r-end", id, hash: await digest2(saved.digests) });
+      const receipt = await done;
+      this.resume.outgoing.delete(id);
+      return receipt.folder;
+    } catch (error) {
+      if (this.outgoing?.reason) {
+        error = new Error(this.outgoing.reason);
+        error.permanent = true;
+      }
+      if (this.closed && !error.permanent && !/timed out|disconnected|interrupted|stalled/i.test(error.message)) error = new Error("Connection interrupted. Waiting to resume\u2026");
+      if (!this.closed && !/timed out|disconnected|interrupted|stalled/i.test(error.message)) error.permanent = true;
+      if (error.permanent) {
+        this.resume.outgoing.delete(id);
+        if (!this.closed) await this.send({ t: "r-cancel", id }).catch(() => {
+        });
+      }
+      this.settle(id, "", error);
+      throw error;
+    } finally {
+      this.outgoing = null;
+    }
+  }
+  cancel() {
+    if (this.outgoing) {
+      const { id } = this.outgoing;
+      this.outgoing.cancelled = true;
+      const error = new Error("Transfer cancelled");
+      error.permanent = true;
+      this.settle(id, "", error);
+      this.resume.outgoing.delete(id);
+      void this.send({ t: "r-cancel", id }).catch(() => {
+      });
+    }
+    const current = this.resume.incoming;
+    if (current) void this.handle({ t: "r-cancel", id: current.id }).then(() => this.send({ t: "r-reject", id: current.id, reason: "Transfer cancelled by receiver" })).catch(() => {
+    });
+  }
+  close(reason = "Connection interrupted. Waiting to resume\u2026") {
+    if (this.closed) return;
+    this.closed = true;
+    this.incoming = null;
+    for (const waiter of this.waits.values()) {
+      clearTimeout(waiter.timer);
+      waiter.reject(new Error(reason));
+    }
+    this.waits.clear();
+    this.closeTransport();
+  }
+};
+async function* skipBytes(stream, offset) {
+  for await (const bytes2 of stream) {
+    if (offset >= bytes2.length) {
+      offset -= bytes2.length;
+      continue;
+    }
+    yield bytes2.subarray(offset);
+    offset = 0;
+  }
+}
+async function* fixedChunks(stream) {
+  let buffer = new Uint8Array(BINARY_CHUNK), used = 0;
+  for await (const bytes2 of stream) for (let pos = 0; pos < bytes2.length; ) {
+    const length = Math.min(BINARY_CHUNK - used, bytes2.length - pos);
+    buffer.set(bytes2.subarray(pos, pos + length), used);
+    used += length;
+    pos += length;
+    if (used === BINARY_CHUNK) {
+      yield buffer;
+      buffer = new Uint8Array(BINARY_CHUNK);
+      used = 0;
+    }
+  }
+  if (used) yield buffer.subarray(0, used);
+}
+
+// src/sources.mjs
+var prefix = "direct-source:";
+async function directSources(library2) {
+  return (await library2.all("keys")).filter((row) => row.id.startsWith(prefix)).map((row) => ({ ...row.file, direct: true }));
+}
+async function addSource(library2, handle) {
+  if (handle?.kind !== "file") throw new Error("Choose a file, not a folder.");
+  const file = await handle.getFile();
+  if (!file.name || file.name.length > 240 || typeof file.type !== "string" || file.type.length > 100) throw new Error("This filename or file type is too long. Rename the file before sending.");
+  if (file.size > PRO_MAX_FILE) throw new Error("This Pro test supports files up to 10 GB.");
+  if ((await directSources(library2)).length >= 100) throw new Error("Remove some queued files before adding more.");
+  const id = crypto.randomUUID();
+  await library2.tx(["keys"], (tx) => tx.objectStore("keys").put({ id: prefix + id, handle, file: { id, name: file.name, type: file.type, size: file.size, lastModified: file.lastModified } }));
+  return id;
+}
+async function removeSource(library2, id) {
+  await library2.tx(["keys"], (tx) => tx.objectStore("keys").delete(prefix + id));
+}
+async function sourceHandle(library2, id) {
+  return (await library2.get("keys", prefix + id))?.handle;
+}
+function fileSource(file, id) {
+  return { id, name: file.name, type: file.type, size: file.size, lastModified: file.lastModified, stream: () => file.stream(), streamFrom: (offset) => file.slice(offset).stream() };
+}
+
+// src/send-to-phone.mjs
+var PHONE_RECEIPT = "phone-stored-v1";
+
+// src/app.mjs
+var import_qrcode = __toESM(require_browser(), 1);
+
+// node_modules/peerjs-js-binarypack/dist/binarypack.mjs
+var $e8379818650e2442$export$93654d4f2d6cd524 = class {
+  constructor() {
+    this.encoder = new TextEncoder();
+    this._pieces = [];
+    this._parts = [];
+  }
+  append_buffer(data) {
+    this.flush();
+    this._parts.push(data);
+  }
+  append(data) {
+    this._pieces.push(data);
+  }
+  flush() {
+    if (this._pieces.length > 0) {
+      const buf = new Uint8Array(this._pieces);
+      this._parts.push(buf);
+      this._pieces = [];
+    }
+  }
+  toArrayBuffer() {
+    const buffer = [];
+    for (const part of this._parts) buffer.push(part);
+    return $e8379818650e2442$var$concatArrayBuffers(buffer).buffer;
+  }
+};
+function $e8379818650e2442$var$concatArrayBuffers(bufs) {
+  let size = 0;
+  for (const buf of bufs) size += buf.byteLength;
+  const result = new Uint8Array(size);
+  let offset = 0;
+  for (const buf of bufs) {
+    const view = new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+    result.set(view, offset);
+    offset += buf.byteLength;
+  }
+  return result;
+}
+function $0cfd7828ad59115f$export$417857010dc9287f(data) {
+  const unpacker = new $0cfd7828ad59115f$var$Unpacker(data);
+  return unpacker.unpack();
+}
+function $0cfd7828ad59115f$export$2a703dbb0cb35339(data) {
+  const packer = new $0cfd7828ad59115f$export$b9ec4b114aa40074();
+  const res = packer.pack(data);
+  if (res instanceof Promise) return res.then(() => packer.getBuffer());
+  return packer.getBuffer();
+}
+var $0cfd7828ad59115f$var$Unpacker = class {
+  constructor(data) {
+    this.index = 0;
+    this.dataBuffer = data;
+    this.dataView = new Uint8Array(this.dataBuffer);
+    this.length = this.dataBuffer.byteLength;
+  }
+  unpack() {
+    const type = this.unpack_uint8();
+    if (type < 128) return type;
+    else if ((type ^ 224) < 32) return (type ^ 224) - 32;
+    let size;
+    if ((size = type ^ 160) <= 15) return this.unpack_raw(size);
+    else if ((size = type ^ 176) <= 15) return this.unpack_string(size);
+    else if ((size = type ^ 144) <= 15) return this.unpack_array(size);
+    else if ((size = type ^ 128) <= 15) return this.unpack_map(size);
+    switch (type) {
+      case 192:
+        return null;
+      case 193:
+        return void 0;
+      case 194:
+        return false;
+      case 195:
+        return true;
+      case 202:
+        return this.unpack_float();
+      case 203:
+        return this.unpack_double();
+      case 204:
+        return this.unpack_uint8();
+      case 205:
+        return this.unpack_uint16();
+      case 206:
+        return this.unpack_uint32();
+      case 207:
+        return this.unpack_uint64();
+      case 208:
+        return this.unpack_int8();
+      case 209:
+        return this.unpack_int16();
+      case 210:
+        return this.unpack_int32();
+      case 211:
+        return this.unpack_int64();
+      case 212:
+        return void 0;
+      case 213:
+        return void 0;
+      case 214:
+        return void 0;
+      case 215:
+        return void 0;
+      case 216:
+        size = this.unpack_uint16();
+        return this.unpack_string(size);
+      case 217:
+        size = this.unpack_uint32();
+        return this.unpack_string(size);
+      case 218:
+        size = this.unpack_uint16();
+        return this.unpack_raw(size);
+      case 219:
+        size = this.unpack_uint32();
+        return this.unpack_raw(size);
+      case 220:
+        size = this.unpack_uint16();
+        return this.unpack_array(size);
+      case 221:
+        size = this.unpack_uint32();
+        return this.unpack_array(size);
+      case 222:
+        size = this.unpack_uint16();
+        return this.unpack_map(size);
+      case 223:
+        size = this.unpack_uint32();
+        return this.unpack_map(size);
+    }
+  }
+  unpack_uint8() {
+    const byte = this.dataView[this.index] & 255;
+    this.index++;
+    return byte;
+  }
+  unpack_uint16() {
+    const bytes2 = this.read(2);
+    const uint16 = (bytes2[0] & 255) * 256 + (bytes2[1] & 255);
+    this.index += 2;
+    return uint16;
+  }
+  unpack_uint32() {
+    const bytes2 = this.read(4);
+    const uint32 = ((bytes2[0] * 256 + bytes2[1]) * 256 + bytes2[2]) * 256 + bytes2[3];
+    this.index += 4;
+    return uint32;
+  }
+  unpack_uint64() {
+    const bytes2 = this.read(8);
+    const uint64 = ((((((bytes2[0] * 256 + bytes2[1]) * 256 + bytes2[2]) * 256 + bytes2[3]) * 256 + bytes2[4]) * 256 + bytes2[5]) * 256 + bytes2[6]) * 256 + bytes2[7];
+    this.index += 8;
+    return uint64;
+  }
+  unpack_int8() {
+    const uint8 = this.unpack_uint8();
+    return uint8 < 128 ? uint8 : uint8 - 256;
+  }
+  unpack_int16() {
+    const uint16 = this.unpack_uint16();
+    return uint16 < 32768 ? uint16 : uint16 - 65536;
+  }
+  unpack_int32() {
+    const uint32 = this.unpack_uint32();
+    return uint32 < 2 ** 31 ? uint32 : uint32 - 2 ** 32;
+  }
+  unpack_int64() {
+    const uint64 = this.unpack_uint64();
+    return uint64 < 2 ** 63 ? uint64 : uint64 - 2 ** 64;
+  }
+  unpack_raw(size) {
+    if (this.length < this.index + size) throw new Error(`BinaryPackFailure: index is out of range ${this.index} ${size} ${this.length}`);
+    const buf = this.dataBuffer.slice(this.index, this.index + size);
+    this.index += size;
+    return buf;
+  }
+  unpack_string(size) {
+    const bytes2 = this.read(size);
+    let i = 0;
+    let str = "";
+    let c;
+    let code;
+    while (i < size) {
+      c = bytes2[i];
+      if (c < 160) {
+        code = c;
+        i++;
+      } else if ((c ^ 192) < 32) {
+        code = (c & 31) << 6 | bytes2[i + 1] & 63;
+        i += 2;
+      } else if ((c ^ 224) < 16) {
+        code = (c & 15) << 12 | (bytes2[i + 1] & 63) << 6 | bytes2[i + 2] & 63;
+        i += 3;
+      } else {
+        code = (c & 7) << 18 | (bytes2[i + 1] & 63) << 12 | (bytes2[i + 2] & 63) << 6 | bytes2[i + 3] & 63;
+        i += 4;
+      }
+      str += String.fromCodePoint(code);
+    }
+    this.index += size;
+    return str;
+  }
+  unpack_array(size) {
+    const objects = new Array(size);
+    for (let i = 0; i < size; i++) objects[i] = this.unpack();
+    return objects;
+  }
+  unpack_map(size) {
+    const map = {};
+    for (let i = 0; i < size; i++) {
+      const key = this.unpack();
+      map[key] = this.unpack();
+    }
+    return map;
+  }
+  unpack_float() {
+    const uint32 = this.unpack_uint32();
+    const sign = uint32 >> 31;
+    const exp = (uint32 >> 23 & 255) - 127;
+    const fraction = uint32 & 8388607 | 8388608;
+    return (sign === 0 ? 1 : -1) * fraction * 2 ** (exp - 23);
+  }
+  unpack_double() {
+    const h32 = this.unpack_uint32();
+    const l32 = this.unpack_uint32();
+    const sign = h32 >> 31;
+    const exp = (h32 >> 20 & 2047) - 1023;
+    const hfrac = h32 & 1048575 | 1048576;
+    const frac = hfrac * 2 ** (exp - 20) + l32 * 2 ** (exp - 52);
+    return (sign === 0 ? 1 : -1) * frac;
+  }
+  read(length) {
+    const j = this.index;
+    if (j + length <= this.length) return this.dataView.subarray(j, j + length);
+    else throw new Error("BinaryPackFailure: read index out of range");
+  }
+};
+var $0cfd7828ad59115f$export$b9ec4b114aa40074 = class {
+  getBuffer() {
+    return this._bufferBuilder.toArrayBuffer();
+  }
+  pack(value) {
+    if (typeof value === "string") this.pack_string(value);
+    else if (typeof value === "number") {
+      if (Math.floor(value) === value) this.pack_integer(value);
+      else this.pack_double(value);
+    } else if (typeof value === "boolean") {
+      if (value === true) this._bufferBuilder.append(195);
+      else if (value === false) this._bufferBuilder.append(194);
+    } else if (value === void 0) this._bufferBuilder.append(192);
+    else if (typeof value === "object") {
+      if (value === null) this._bufferBuilder.append(192);
+      else {
+        const constructor = value.constructor;
+        if (value instanceof Array) {
+          const res = this.pack_array(value);
+          if (res instanceof Promise) return res.then(() => this._bufferBuilder.flush());
+        } else if (value instanceof ArrayBuffer) this.pack_bin(new Uint8Array(value));
+        else if ("BYTES_PER_ELEMENT" in value) {
+          const v = value;
+          this.pack_bin(new Uint8Array(v.buffer, v.byteOffset, v.byteLength));
+        } else if (value instanceof Date) this.pack_string(value.toString());
+        else if (value instanceof Blob) return value.arrayBuffer().then((buffer) => {
+          this.pack_bin(new Uint8Array(buffer));
+          this._bufferBuilder.flush();
+        });
+        else if (constructor == Object || constructor.toString().startsWith("class")) {
+          const res = this.pack_object(value);
+          if (res instanceof Promise) return res.then(() => this._bufferBuilder.flush());
+        } else throw new Error(`Type "${constructor.toString()}" not yet supported`);
+      }
+    } else throw new Error(`Type "${typeof value}" not yet supported`);
+    this._bufferBuilder.flush();
+  }
+  pack_bin(blob) {
+    const length = blob.length;
+    if (length <= 15) this.pack_uint8(160 + length);
+    else if (length <= 65535) {
+      this._bufferBuilder.append(218);
+      this.pack_uint16(length);
+    } else if (length <= 4294967295) {
+      this._bufferBuilder.append(219);
+      this.pack_uint32(length);
+    } else throw new Error("Invalid length");
+    this._bufferBuilder.append_buffer(blob);
+  }
+  pack_string(str) {
+    const encoded = this._textEncoder.encode(str);
+    const length = encoded.length;
+    if (length <= 15) this.pack_uint8(176 + length);
+    else if (length <= 65535) {
+      this._bufferBuilder.append(216);
+      this.pack_uint16(length);
+    } else if (length <= 4294967295) {
+      this._bufferBuilder.append(217);
+      this.pack_uint32(length);
+    } else throw new Error("Invalid length");
+    this._bufferBuilder.append_buffer(encoded);
+  }
+  pack_array(ary) {
+    const length = ary.length;
+    if (length <= 15) this.pack_uint8(144 + length);
+    else if (length <= 65535) {
+      this._bufferBuilder.append(220);
+      this.pack_uint16(length);
+    } else if (length <= 4294967295) {
+      this._bufferBuilder.append(221);
+      this.pack_uint32(length);
+    } else throw new Error("Invalid length");
+    const packNext = (index) => {
+      if (index < length) {
+        const res = this.pack(ary[index]);
+        if (res instanceof Promise) return res.then(() => packNext(index + 1));
+        return packNext(index + 1);
+      }
+    };
+    return packNext(0);
+  }
+  pack_integer(num) {
+    if (num >= -32 && num <= 127) this._bufferBuilder.append(num & 255);
+    else if (num >= 0 && num <= 255) {
+      this._bufferBuilder.append(204);
+      this.pack_uint8(num);
+    } else if (num >= -128 && num <= 127) {
+      this._bufferBuilder.append(208);
+      this.pack_int8(num);
+    } else if (num >= 0 && num <= 65535) {
+      this._bufferBuilder.append(205);
+      this.pack_uint16(num);
+    } else if (num >= -32768 && num <= 32767) {
+      this._bufferBuilder.append(209);
+      this.pack_int16(num);
+    } else if (num >= 0 && num <= 4294967295) {
+      this._bufferBuilder.append(206);
+      this.pack_uint32(num);
+    } else if (num >= -2147483648 && num <= 2147483647) {
+      this._bufferBuilder.append(210);
+      this.pack_int32(num);
+    } else if (num >= -9223372036854776e3 && num <= 9223372036854776e3) {
+      this._bufferBuilder.append(211);
+      this.pack_int64(num);
+    } else if (num >= 0 && num <= 18446744073709552e3) {
+      this._bufferBuilder.append(207);
+      this.pack_uint64(num);
+    } else throw new Error("Invalid integer");
+  }
+  pack_double(num) {
+    let sign = 0;
+    if (num < 0) {
+      sign = 1;
+      num = -num;
+    }
+    const exp = Math.floor(Math.log(num) / Math.LN2);
+    const frac0 = num / 2 ** exp - 1;
+    const frac1 = Math.floor(frac0 * 2 ** 52);
+    const b32 = 2 ** 32;
+    const h32 = sign << 31 | exp + 1023 << 20 | frac1 / b32 & 1048575;
+    const l32 = frac1 % b32;
+    this._bufferBuilder.append(203);
+    this.pack_int32(h32);
+    this.pack_int32(l32);
+  }
+  pack_object(obj) {
+    const keys = Object.keys(obj);
+    const length = keys.length;
+    if (length <= 15) this.pack_uint8(128 + length);
+    else if (length <= 65535) {
+      this._bufferBuilder.append(222);
+      this.pack_uint16(length);
+    } else if (length <= 4294967295) {
+      this._bufferBuilder.append(223);
+      this.pack_uint32(length);
+    } else throw new Error("Invalid length");
+    const packNext = (index) => {
+      if (index < keys.length) {
+        const prop = keys[index];
+        if (obj.hasOwnProperty(prop)) {
+          this.pack(prop);
+          const res = this.pack(obj[prop]);
+          if (res instanceof Promise) return res.then(() => packNext(index + 1));
+        }
+        return packNext(index + 1);
+      }
+    };
+    return packNext(0);
+  }
+  pack_uint8(num) {
+    this._bufferBuilder.append(num);
+  }
+  pack_uint16(num) {
+    this._bufferBuilder.append(num >> 8);
+    this._bufferBuilder.append(num & 255);
+  }
+  pack_uint32(num) {
+    const n = num & 4294967295;
+    this._bufferBuilder.append((n & 4278190080) >>> 24);
+    this._bufferBuilder.append((n & 16711680) >>> 16);
+    this._bufferBuilder.append((n & 65280) >>> 8);
+    this._bufferBuilder.append(n & 255);
+  }
+  pack_uint64(num) {
+    const high = num / 2 ** 32;
+    const low = num % 2 ** 32;
+    this._bufferBuilder.append((high & 4278190080) >>> 24);
+    this._bufferBuilder.append((high & 16711680) >>> 16);
+    this._bufferBuilder.append((high & 65280) >>> 8);
+    this._bufferBuilder.append(high & 255);
+    this._bufferBuilder.append((low & 4278190080) >>> 24);
+    this._bufferBuilder.append((low & 16711680) >>> 16);
+    this._bufferBuilder.append((low & 65280) >>> 8);
+    this._bufferBuilder.append(low & 255);
+  }
+  pack_int8(num) {
+    this._bufferBuilder.append(num & 255);
+  }
+  pack_int16(num) {
+    this._bufferBuilder.append((num & 65280) >> 8);
+    this._bufferBuilder.append(num & 255);
+  }
+  pack_int32(num) {
+    this._bufferBuilder.append(num >>> 24 & 255);
+    this._bufferBuilder.append((num & 16711680) >>> 16);
+    this._bufferBuilder.append((num & 65280) >>> 8);
+    this._bufferBuilder.append(num & 255);
+  }
+  pack_int64(num) {
+    const high = Math.floor(num / 2 ** 32);
+    const low = num % 2 ** 32;
+    this._bufferBuilder.append((high & 4278190080) >>> 24);
+    this._bufferBuilder.append((high & 16711680) >>> 16);
+    this._bufferBuilder.append((high & 65280) >>> 8);
+    this._bufferBuilder.append(high & 255);
+    this._bufferBuilder.append((low & 4278190080) >>> 24);
+    this._bufferBuilder.append((low & 16711680) >>> 16);
+    this._bufferBuilder.append((low & 65280) >>> 8);
+    this._bufferBuilder.append(low & 255);
+  }
+  constructor() {
+    this._bufferBuilder = new (0, $e8379818650e2442$export$93654d4f2d6cd524)();
+    this._textEncoder = new TextEncoder();
+  }
+};
+
+// node_modules/webrtc-adapter/src/js/utils.js
+var logDisabled_ = true;
+var deprecationWarnings_ = true;
+function extractVersion(uastring, expr, pos) {
+  const match = uastring.match(expr);
+  return match && match.length >= pos && parseFloat(match[pos], 10);
+}
+function wrapPeerConnectionEvent(window2, eventNameToWrap, wrapper) {
+  if (!window2.RTCPeerConnection) {
+    return;
+  }
+  const addEventListener = Object.getOwnPropertyDescriptor(
+    EventTarget.prototype,
+    "addEventListener"
+  );
+  if (!addEventListener.writable) {
+    log("Unable to polyfill events");
+    return;
+  }
+  const proto = window2.RTCPeerConnection.prototype;
+  const nativeAddEventListener = proto.addEventListener;
+  proto.addEventListener = function(nativeEventName, cb) {
+    if (nativeEventName !== eventNameToWrap) {
+      return nativeAddEventListener.apply(this, arguments);
+    }
+    const wrappedCallback = (e) => {
+      const modifiedEvent = wrapper(e);
+      if (modifiedEvent) {
+        if (cb.handleEvent) {
+          cb.handleEvent(modifiedEvent);
+        } else {
+          cb(modifiedEvent);
+        }
+      }
+    };
+    this._eventMap = this._eventMap || {};
+    if (!this._eventMap[eventNameToWrap]) {
+      this._eventMap[eventNameToWrap] = /* @__PURE__ */ new Map();
+    }
+    this._eventMap[eventNameToWrap].set(cb, wrappedCallback);
+    return nativeAddEventListener.apply(this, [
+      nativeEventName,
+      wrappedCallback
+    ]);
+  };
+  const nativeRemoveEventListener = proto.removeEventListener;
+  proto.removeEventListener = function(nativeEventName, cb) {
+    if (nativeEventName !== eventNameToWrap || !this._eventMap || !this._eventMap[eventNameToWrap]) {
+      return nativeRemoveEventListener.apply(this, arguments);
+    }
+    if (!this._eventMap[eventNameToWrap].has(cb)) {
+      return nativeRemoveEventListener.apply(this, arguments);
+    }
+    const unwrappedCb = this._eventMap[eventNameToWrap].get(cb);
+    this._eventMap[eventNameToWrap].delete(cb);
+    if (this._eventMap[eventNameToWrap].size === 0) {
+      delete this._eventMap[eventNameToWrap];
+    }
+    if (Object.keys(this._eventMap).length === 0) {
+      delete this._eventMap;
+    }
+    return nativeRemoveEventListener.apply(this, [
+      nativeEventName,
+      unwrappedCb
+    ]);
+  };
+  Object.defineProperty(proto, "on" + eventNameToWrap, {
+    get() {
+      return this["_on" + eventNameToWrap];
+    },
+    set(cb) {
+      if (this["_on" + eventNameToWrap]) {
+        this.removeEventListener(
+          eventNameToWrap,
+          this["_on" + eventNameToWrap]
+        );
+        delete this["_on" + eventNameToWrap];
+      }
+      if (cb) {
+        this.addEventListener(
+          eventNameToWrap,
+          this["_on" + eventNameToWrap] = cb
+        );
+      }
+    },
+    enumerable: true,
+    configurable: true
+  });
+}
+function disableLog(bool) {
+  if (typeof bool !== "boolean") {
+    return new Error("Argument type: " + typeof bool + ". Please use a boolean.");
+  }
+  logDisabled_ = bool;
+  return bool ? "adapter.js logging disabled" : "adapter.js logging enabled";
+}
+function disableWarnings(bool) {
+  if (typeof bool !== "boolean") {
+    return new Error("Argument type: " + typeof bool + ". Please use a boolean.");
+  }
+  deprecationWarnings_ = !bool;
+  return "adapter.js deprecation warnings " + (bool ? "disabled" : "enabled");
+}
+function log() {
+  if (typeof window === "object") {
+    if (logDisabled_) {
+      return;
+    }
+    if (typeof console !== "undefined" && typeof console.log === "function") {
+      console.log.apply(console, arguments);
+    }
+  }
+}
+function deprecated(oldMethod, newMethod) {
+  if (!deprecationWarnings_) {
+    return;
+  }
+  console.warn(oldMethod + " is deprecated, please use " + newMethod + " instead.");
+}
+function detectBrowser(window2) {
+  const result = { browser: null, version: null };
+  if (typeof window2 === "undefined" || !window2.navigator || !window2.navigator.userAgent) {
+    result.browser = "Not a browser.";
+    return result;
+  }
+  const { navigator: navigator2 } = window2;
+  if (navigator2.userAgentData && navigator2.userAgentData.brands) {
+    const chromium = navigator2.userAgentData.brands.find((brand) => {
+      return brand.brand === "Chromium";
+    });
+    if (chromium) {
+      const version = parseInt(chromium.version, 10);
+      if (version >= 90) {
+        return { browser: "chrome", version };
+      }
+    }
+  }
+  if (navigator2.mozGetUserMedia) {
+    result.browser = "firefox";
+    result.version = parseInt(extractVersion(
+      navigator2.userAgent,
+      /Firefox\/(\d+)\./,
+      1
+    ));
+  } else if (navigator2.webkitGetUserMedia || window2.isSecureContext === false && window2.webkitRTCPeerConnection) {
+    result.browser = "chrome";
+    result.version = parseInt(extractVersion(
+      navigator2.userAgent,
+      /Chrom(e|ium)\/(\d+)\./,
+      2
+    )) || null;
+  } else if (window2.RTCPeerConnection && navigator2.userAgent.match(/AppleWebKit\/(\d+)\./)) {
+    result.browser = "safari";
+    result.version = parseInt(extractVersion(
+      navigator2.userAgent,
+      /AppleWebKit\/(\d+)\./,
+      1
+    ));
+    result.supportsUnifiedPlan = window2.RTCRtpTransceiver && "currentDirection" in window2.RTCRtpTransceiver.prototype;
+    result._safariVersion = extractVersion(
+      navigator2.userAgent,
+      /Version\/(\d+(\.?\d+))/,
+      1
+    );
+  } else {
+    result.browser = "Not a supported browser.";
+    return result;
+  }
+  return result;
+}
+function isObject(val) {
+  return Object.prototype.toString.call(val) === "[object Object]";
+}
+function compactObject(data) {
+  if (!isObject(data)) {
+    return data;
+  }
+  return Object.keys(data).reduce(function(accumulator, key) {
+    const isObj = isObject(data[key]);
+    const value = isObj ? compactObject(data[key]) : data[key];
+    const isEmptyObject = isObj && !Object.keys(value).length;
+    if (value === void 0 || isEmptyObject) {
+      return accumulator;
+    }
+    return Object.assign(accumulator, { [key]: value });
+  }, {});
+}
+function walkStats(stats, base, resultSet) {
+  if (!base || resultSet.has(base.id)) {
+    return;
+  }
+  resultSet.set(base.id, base);
+  Object.keys(base).forEach((name) => {
+    if (name.endsWith("Id")) {
+      walkStats(stats, stats.get(base[name]), resultSet);
+    } else if (name.endsWith("Ids")) {
+      base[name].forEach((id) => {
+        walkStats(stats, stats.get(id), resultSet);
+      });
+    }
+  });
+}
+function filterStats(result, track, outbound) {
+  const streamStatsType = outbound ? "outbound-rtp" : "inbound-rtp";
+  const filteredResult = /* @__PURE__ */ new Map();
+  if (track === null) {
+    return filteredResult;
+  }
+  const trackStats = [];
+  result.forEach((value) => {
+    if (value.type === "track" && value.trackIdentifier === track.id) {
+      trackStats.push(value);
+    }
+  });
+  trackStats.forEach((trackStat) => {
+    result.forEach((stats) => {
+      if (stats.type === streamStatsType && stats.trackId === trackStat.id) {
+        walkStats(result, stats, filteredResult);
+      }
+    });
+  });
+  return filteredResult;
+}
+
+// node_modules/webrtc-adapter/src/js/chrome/chrome_shim.js
+var chrome_shim_exports = {};
+__export(chrome_shim_exports, {
+  fixNegotiationNeeded: () => fixNegotiationNeeded,
+  shimAddTrackRemoveTrack: () => shimAddTrackRemoveTrack,
+  shimAddTrackRemoveTrackWithNative: () => shimAddTrackRemoveTrackWithNative,
+  shimGetSendersWithDtmf: () => shimGetSendersWithDtmf,
+  shimGetUserMedia: () => shimGetUserMedia,
+  shimMediaStream: () => shimMediaStream,
+  shimOnTrack: () => shimOnTrack,
+  shimPeerConnection: () => shimPeerConnection,
+  shimSenderReceiverGetStats: () => shimSenderReceiverGetStats
+});
+
+// node_modules/webrtc-adapter/src/js/chrome/getusermedia.js
+var logging = log;
+function shimGetUserMedia(window2, browserDetails) {
+  if (browserDetails.version >= 64) {
+    return;
+  }
+  const navigator2 = window2 && window2.navigator;
+  if (!navigator2.mediaDevices) {
+    return;
+  }
+  const constraintsToChrome_ = function(c) {
+    if (typeof c !== "object" || c.mandatory || c.optional) {
+      return c;
+    }
+    const cc = {};
+    Object.keys(c).forEach((key) => {
+      if (key === "require" || key === "advanced" || key === "mediaSource") {
+        return;
+      }
+      const r = typeof c[key] === "object" ? c[key] : { ideal: c[key] };
+      if (r.exact !== void 0 && typeof r.exact === "number") {
+        r.min = r.max = r.exact;
+      }
+      const oldname_ = function(prefix2, name) {
+        if (prefix2) {
+          return prefix2 + name.charAt(0).toUpperCase() + name.slice(1);
+        }
+        return name === "deviceId" ? "sourceId" : name;
+      };
+      if (r.ideal !== void 0) {
+        cc.optional = cc.optional || [];
+        let oc = {};
+        if (typeof r.ideal === "number") {
+          oc[oldname_("min", key)] = r.ideal;
+          cc.optional.push(oc);
+          oc = {};
+          oc[oldname_("max", key)] = r.ideal;
+          cc.optional.push(oc);
+        } else {
+          oc[oldname_("", key)] = r.ideal;
+          cc.optional.push(oc);
+        }
+      }
+      if (r.exact !== void 0 && typeof r.exact !== "number") {
+        cc.mandatory = cc.mandatory || {};
+        cc.mandatory[oldname_("", key)] = r.exact;
+      } else {
+        ["min", "max"].forEach((mix) => {
+          if (r[mix] !== void 0) {
+            cc.mandatory = cc.mandatory || {};
+            cc.mandatory[oldname_(mix, key)] = r[mix];
+          }
+        });
+      }
+    });
+    if (c.advanced) {
+      cc.optional = (cc.optional || []).concat(c.advanced);
+    }
+    return cc;
+  };
+  const shimConstraints_ = function(constraints, func) {
+    if (browserDetails.version >= 61) {
+      return func(constraints);
+    }
+    constraints = JSON.parse(JSON.stringify(constraints));
+    if (constraints && typeof constraints.audio === "object") {
+      const remap = function(obj, a, b) {
+        if (a in obj && !(b in obj)) {
+          obj[b] = obj[a];
+          delete obj[a];
+        }
+      };
+      constraints = JSON.parse(JSON.stringify(constraints));
+      remap(constraints.audio, "autoGainControl", "googAutoGainControl");
+      remap(constraints.audio, "noiseSuppression", "googNoiseSuppression");
+      constraints.audio = constraintsToChrome_(constraints.audio);
+    }
+    if (constraints && typeof constraints.video === "object") {
+      let face = constraints.video.facingMode;
+      face = face && (typeof face === "object" ? face : { ideal: face });
+      const getSupportedFacingModeLies = browserDetails.version < 66;
+      if (face && (face.exact === "user" || face.exact === "environment" || face.ideal === "user" || face.ideal === "environment") && !(navigator2.mediaDevices.getSupportedConstraints && navigator2.mediaDevices.getSupportedConstraints().facingMode && !getSupportedFacingModeLies)) {
+        delete constraints.video.facingMode;
+        let matches;
+        if (face.exact === "environment" || face.ideal === "environment") {
+          matches = ["back", "rear"];
+        } else if (face.exact === "user" || face.ideal === "user") {
+          matches = ["front"];
+        }
+        if (matches) {
+          return navigator2.mediaDevices.enumerateDevices().then((devices) => {
+            devices = devices.filter((d) => d.kind === "videoinput");
+            let dev = devices.find((d) => matches.some((match) => d.label.toLowerCase().includes(match)));
+            if (!dev && devices.length && matches.includes("back")) {
+              dev = devices[devices.length - 1];
+            }
+            if (dev) {
+              constraints.video.deviceId = face.exact ? { exact: dev.deviceId } : { ideal: dev.deviceId };
+            }
+            constraints.video = constraintsToChrome_(constraints.video);
+            logging("chrome: " + JSON.stringify(constraints));
+            return func(constraints);
+          });
+        }
+      }
+      constraints.video = constraintsToChrome_(constraints.video);
+    }
+    logging("chrome: " + JSON.stringify(constraints));
+    return func(constraints);
+  };
+  const shimError_ = function(e) {
+    if (browserDetails.version >= 64) {
+      return e;
+    }
+    return {
+      name: {
+        PermissionDeniedError: "NotAllowedError",
+        PermissionDismissedError: "NotAllowedError",
+        InvalidStateError: "NotAllowedError",
+        DevicesNotFoundError: "NotFoundError",
+        ConstraintNotSatisfiedError: "OverconstrainedError",
+        TrackStartError: "NotReadableError",
+        MediaDeviceFailedDueToShutdown: "NotAllowedError",
+        MediaDeviceKillSwitchOn: "NotAllowedError",
+        TabCaptureError: "AbortError",
+        ScreenCaptureError: "AbortError",
+        DeviceCaptureError: "AbortError"
+      }[e.name] || e.name,
+      message: e.message,
+      constraint: e.constraint || e.constraintName,
+      toString() {
+        return this.name + (this.message && ": ") + this.message;
+      }
+    };
+  };
+  const getUserMedia_ = function(constraints, onSuccess, onError) {
+    shimConstraints_(constraints, (c) => {
+      navigator2.webkitGetUserMedia(c, onSuccess, (e) => {
+        if (onError) {
+          onError(shimError_(e));
+        }
+      });
+    });
+  };
+  navigator2.getUserMedia = getUserMedia_.bind(navigator2);
+  if (navigator2.mediaDevices.getUserMedia) {
+    const origGetUserMedia = navigator2.mediaDevices.getUserMedia.bind(navigator2.mediaDevices);
+    navigator2.mediaDevices.getUserMedia = function(cs) {
+      return shimConstraints_(cs, (c) => origGetUserMedia(c).then((stream) => {
+        if (c.audio && !stream.getAudioTracks().length || c.video && !stream.getVideoTracks().length) {
+          stream.getTracks().forEach((track) => {
+            track.stop();
+          });
+          throw new DOMException("", "NotFoundError");
+        }
+        return stream;
+      }, (e) => Promise.reject(shimError_(e))));
+    };
+  }
+}
+
+// node_modules/webrtc-adapter/src/js/chrome/chrome_shim.js
+function shimMediaStream(window2) {
+  window2.MediaStream = window2.MediaStream || window2.webkitMediaStream;
+}
+function shimOnTrack(window2, browserDetails) {
+  if (browserDetails.version > 102) {
+    return;
+  }
+  if (typeof window2 === "object" && window2.RTCPeerConnection && !("ontrack" in window2.RTCPeerConnection.prototype)) {
+    Object.defineProperty(window2.RTCPeerConnection.prototype, "ontrack", {
+      get() {
+        return this._ontrack;
+      },
+      set(f) {
+        if (this._ontrack) {
+          this.removeEventListener("track", this._ontrack);
+        }
+        this.addEventListener("track", this._ontrack = f);
+      },
+      enumerable: true,
+      configurable: true
+    });
+    const origSetRemoteDescription = window2.RTCPeerConnection.prototype.setRemoteDescription;
+    window2.RTCPeerConnection.prototype.setRemoteDescription = function setRemoteDescription() {
+      if (!this._ontrackpoly) {
+        this._ontrackpoly = (e) => {
+          e.stream.addEventListener("addtrack", (te) => {
+            let receiver;
+            if (window2.RTCPeerConnection.prototype.getReceivers) {
+              receiver = this.getReceivers().find((r) => r.track && r.track.id === te.track.id);
+            } else {
+              receiver = { track: te.track };
+            }
+            const event = new Event("track");
+            event.track = te.track;
+            event.receiver = receiver;
+            event.transceiver = { receiver };
+            event.streams = [e.stream];
+            this.dispatchEvent(event);
+          });
+          e.stream.getTracks().forEach((track) => {
+            let receiver;
+            if (window2.RTCPeerConnection.prototype.getReceivers) {
+              receiver = this.getReceivers().find((r) => r.track && r.track.id === track.id);
+            } else {
+              receiver = { track };
+            }
+            const event = new Event("track");
+            event.track = track;
+            event.receiver = receiver;
+            event.transceiver = { receiver };
+            event.streams = [e.stream];
+            this.dispatchEvent(event);
+          });
+        };
+        this.addEventListener("addstream", this._ontrackpoly);
+      }
+      return origSetRemoteDescription.apply(this, arguments);
+    };
+  } else {
+    wrapPeerConnectionEvent(window2, "track", (e) => {
+      if (!e.transceiver) {
+        Object.defineProperty(
+          e,
+          "transceiver",
+          { value: { receiver: e.receiver } }
+        );
+      }
+      return e;
+    });
+  }
+}
+function shimGetSendersWithDtmf(window2) {
+  if (typeof window2 === "object" && window2.RTCPeerConnection && !("getSenders" in window2.RTCPeerConnection.prototype) && "createDTMFSender" in window2.RTCPeerConnection.prototype) {
+    const shimSenderWithDtmf = function(pc, track) {
+      return {
+        track,
+        get dtmf() {
+          if (this._dtmf === void 0) {
+            if (track.kind === "audio") {
+              this._dtmf = pc.createDTMFSender(track);
+            } else {
+              this._dtmf = null;
+            }
+          }
+          return this._dtmf;
+        },
+        _pc: pc
+      };
+    };
+    if (!window2.RTCPeerConnection.prototype.getSenders) {
+      window2.RTCPeerConnection.prototype.getSenders = function getSenders() {
+        this._senders = this._senders || [];
+        return this._senders.slice();
+      };
+      const origAddTrack = window2.RTCPeerConnection.prototype.addTrack;
+      window2.RTCPeerConnection.prototype.addTrack = function addTrack(track, stream) {
+        let sender = origAddTrack.apply(this, arguments);
+        if (!sender) {
+          sender = shimSenderWithDtmf(this, track);
+          this._senders.push(sender);
+        }
+        return sender;
+      };
+      const origRemoveTrack = window2.RTCPeerConnection.prototype.removeTrack;
+      window2.RTCPeerConnection.prototype.removeTrack = function removeTrack(sender) {
+        origRemoveTrack.apply(this, arguments);
+        const idx = this._senders.indexOf(sender);
+        if (idx !== -1) {
+          this._senders.splice(idx, 1);
+        }
+      };
+    }
+    const origAddStream = window2.RTCPeerConnection.prototype.addStream;
+    window2.RTCPeerConnection.prototype.addStream = function addStream(stream) {
+      this._senders = this._senders || [];
+      origAddStream.apply(this, [stream]);
+      stream.getTracks().forEach((track) => {
+        this._senders.push(shimSenderWithDtmf(this, track));
+      });
+    };
+    const origRemoveStream = window2.RTCPeerConnection.prototype.removeStream;
+    window2.RTCPeerConnection.prototype.removeStream = function removeStream(stream) {
+      this._senders = this._senders || [];
+      origRemoveStream.apply(this, [stream]);
+      stream.getTracks().forEach((track) => {
+        const sender = this._senders.find((s) => s.track === track);
+        if (sender) {
+          this._senders.splice(this._senders.indexOf(sender), 1);
+        }
+      });
+    };
+  } else if (typeof window2 === "object" && window2.RTCPeerConnection && "getSenders" in window2.RTCPeerConnection.prototype && "createDTMFSender" in window2.RTCPeerConnection.prototype && window2.RTCRtpSender && !("dtmf" in window2.RTCRtpSender.prototype)) {
+    const origGetSenders = window2.RTCPeerConnection.prototype.getSenders;
+    window2.RTCPeerConnection.prototype.getSenders = function getSenders() {
+      const senders = origGetSenders.apply(this, []);
+      senders.forEach((sender) => sender._pc = this);
+      return senders;
+    };
+    Object.defineProperty(window2.RTCRtpSender.prototype, "dtmf", {
+      get() {
+        if (this._dtmf === void 0) {
+          if (this.track.kind === "audio") {
+            this._dtmf = this._pc.createDTMFSender(this.track);
+          } else {
+            this._dtmf = null;
+          }
+        }
+        return this._dtmf;
+      }
+    });
+  }
+}
+function shimSenderReceiverGetStats(window2, browserDetails) {
+  if (browserDetails.version >= 67) {
+    return;
+  }
+  if (!(typeof window2 === "object" && window2.RTCPeerConnection && window2.RTCRtpSender && window2.RTCRtpReceiver)) {
+    return;
+  }
+  if (!("getStats" in window2.RTCRtpSender.prototype)) {
+    const origGetSenders = window2.RTCPeerConnection.prototype.getSenders;
+    if (origGetSenders) {
+      window2.RTCPeerConnection.prototype.getSenders = function getSenders() {
+        const senders = origGetSenders.apply(this, []);
+        senders.forEach((sender) => sender._pc = this);
+        return senders;
+      };
+    }
+    const origAddTrack = window2.RTCPeerConnection.prototype.addTrack;
+    if (origAddTrack) {
+      window2.RTCPeerConnection.prototype.addTrack = function addTrack() {
+        const sender = origAddTrack.apply(this, arguments);
+        sender._pc = this;
+        return sender;
+      };
+    }
+    window2.RTCRtpSender.prototype.getStats = function getStats() {
+      const sender = this;
+      return this._pc.getStats().then((result) => (
+        /* Note: this will include stats of all senders that
+         *   send a track with the same id as sender.track as
+         *   it is not possible to identify the RTCRtpSender.
+         */
+        filterStats(result, sender.track, true)
+      ));
+    };
+  }
+  if (!("getStats" in window2.RTCRtpReceiver.prototype)) {
+    const origGetReceivers = window2.RTCPeerConnection.prototype.getReceivers;
+    if (origGetReceivers) {
+      window2.RTCPeerConnection.prototype.getReceivers = function getReceivers() {
+        const receivers = origGetReceivers.apply(this, []);
+        receivers.forEach((receiver) => receiver._pc = this);
+        return receivers;
+      };
+    }
+    wrapPeerConnectionEvent(window2, "track", (e) => {
+      e.receiver._pc = e.srcElement;
+      return e;
+    });
+    window2.RTCRtpReceiver.prototype.getStats = function getStats() {
+      const receiver = this;
+      return this._pc.getStats().then((result) => filterStats(result, receiver.track, false));
+    };
+  }
+  if (!("getStats" in window2.RTCRtpSender.prototype && "getStats" in window2.RTCRtpReceiver.prototype)) {
+    return;
+  }
+  const origGetStats = window2.RTCPeerConnection.prototype.getStats;
+  window2.RTCPeerConnection.prototype.getStats = function getStats() {
+    if (arguments.length > 0 && arguments[0] instanceof window2.MediaStreamTrack) {
+      const track = arguments[0];
+      let sender;
+      let receiver;
+      let err;
+      this.getSenders().forEach((s) => {
+        if (s.track === track) {
+          if (sender) {
+            err = true;
+          } else {
+            sender = s;
+          }
+        }
+      });
+      this.getReceivers().forEach((r) => {
+        if (r.track === track) {
+          if (receiver) {
+            err = true;
+          } else {
+            receiver = r;
+          }
+        }
+        return r.track === track;
+      });
+      if (err || sender && receiver) {
+        return Promise.reject(new DOMException(
+          "There are more than one sender or receiver for the track.",
+          "InvalidAccessError"
+        ));
+      } else if (sender) {
+        return sender.getStats();
+      } else if (receiver) {
+        return receiver.getStats();
+      }
+      return Promise.reject(new DOMException(
+        "There is no sender or receiver for the track.",
+        "InvalidAccessError"
+      ));
+    }
+    return origGetStats.apply(this, arguments);
+  };
+}
+function shimAddTrackRemoveTrackWithNative(window2) {
+  window2.RTCPeerConnection.prototype.getLocalStreams = function getLocalStreams() {
+    this._shimmedLocalStreams = this._shimmedLocalStreams || {};
+    return Object.keys(this._shimmedLocalStreams).map((streamId) => this._shimmedLocalStreams[streamId][0]);
+  };
+  const origAddTrack = window2.RTCPeerConnection.prototype.addTrack;
+  window2.RTCPeerConnection.prototype.addTrack = function addTrack(track, stream) {
+    if (!stream) {
+      return origAddTrack.apply(this, arguments);
+    }
+    this._shimmedLocalStreams = this._shimmedLocalStreams || {};
+    const sender = origAddTrack.apply(this, arguments);
+    if (!this._shimmedLocalStreams[stream.id]) {
+      this._shimmedLocalStreams[stream.id] = [stream, sender];
+    } else if (this._shimmedLocalStreams[stream.id].indexOf(sender) === -1) {
+      this._shimmedLocalStreams[stream.id].push(sender);
+    }
+    return sender;
+  };
+  const origAddStream = window2.RTCPeerConnection.prototype.addStream;
+  window2.RTCPeerConnection.prototype.addStream = function addStream(stream) {
+    this._shimmedLocalStreams = this._shimmedLocalStreams || {};
+    stream.getTracks().forEach((track) => {
+      const alreadyExists = this.getSenders().find((s) => s.track === track);
+      if (alreadyExists) {
+        throw new DOMException(
+          "Track already exists.",
+          "InvalidAccessError"
+        );
+      }
+    });
+    const existingSenders = this.getSenders();
+    origAddStream.apply(this, arguments);
+    const newSenders = this.getSenders().filter((newSender) => existingSenders.indexOf(newSender) === -1);
+    this._shimmedLocalStreams[stream.id] = [stream].concat(newSenders);
+  };
+  const origRemoveStream = window2.RTCPeerConnection.prototype.removeStream;
+  window2.RTCPeerConnection.prototype.removeStream = function removeStream(stream) {
+    this._shimmedLocalStreams = this._shimmedLocalStreams || {};
+    delete this._shimmedLocalStreams[stream.id];
+    return origRemoveStream.apply(this, arguments);
+  };
+  const origRemoveTrack = window2.RTCPeerConnection.prototype.removeTrack;
+  window2.RTCPeerConnection.prototype.removeTrack = function removeTrack(sender) {
+    this._shimmedLocalStreams = this._shimmedLocalStreams || {};
+    if (sender) {
+      Object.keys(this._shimmedLocalStreams).forEach((streamId) => {
+        const idx = this._shimmedLocalStreams[streamId].indexOf(sender);
+        if (idx !== -1) {
+          this._shimmedLocalStreams[streamId].splice(idx, 1);
+        }
+        if (this._shimmedLocalStreams[streamId].length === 1) {
+          delete this._shimmedLocalStreams[streamId];
+        }
+      });
+    }
+    return origRemoveTrack.apply(this, arguments);
+  };
+}
+function shimAddTrackRemoveTrack(window2, browserDetails) {
+  if (!window2.RTCPeerConnection) {
+    return;
+  }
+  if (window2.RTCPeerConnection.prototype.addTrack && browserDetails.version >= 65) {
+    return shimAddTrackRemoveTrackWithNative(window2);
+  }
+  const origGetLocalStreams = window2.RTCPeerConnection.prototype.getLocalStreams;
+  window2.RTCPeerConnection.prototype.getLocalStreams = function getLocalStreams() {
+    const nativeStreams = origGetLocalStreams.apply(this);
+    this._reverseStreams = this._reverseStreams || {};
+    return nativeStreams.map((stream) => this._reverseStreams[stream.id]);
+  };
+  const origAddStream = window2.RTCPeerConnection.prototype.addStream;
+  window2.RTCPeerConnection.prototype.addStream = function addStream(stream) {
+    this._streams = this._streams || {};
+    this._reverseStreams = this._reverseStreams || {};
+    stream.getTracks().forEach((track) => {
+      const alreadyExists = this.getSenders().find((s) => s.track === track);
+      if (alreadyExists) {
+        throw new DOMException(
+          "Track already exists.",
+          "InvalidAccessError"
+        );
+      }
+    });
+    if (!this._reverseStreams[stream.id]) {
+      const newStream = new window2.MediaStream(stream.getTracks());
+      this._streams[stream.id] = newStream;
+      this._reverseStreams[newStream.id] = stream;
+      stream = newStream;
+    }
+    origAddStream.apply(this, [stream]);
+  };
+  const origRemoveStream = window2.RTCPeerConnection.prototype.removeStream;
+  window2.RTCPeerConnection.prototype.removeStream = function removeStream(stream) {
+    this._streams = this._streams || {};
+    this._reverseStreams = this._reverseStreams || {};
+    origRemoveStream.apply(this, [this._streams[stream.id] || stream]);
+    delete this._reverseStreams[this._streams[stream.id] ? this._streams[stream.id].id : stream.id];
+    delete this._streams[stream.id];
+  };
+  window2.RTCPeerConnection.prototype.addTrack = function addTrack(track, stream) {
+    if (this.signalingState === "closed") {
+      throw new DOMException(
+        "The RTCPeerConnection's signalingState is 'closed'.",
+        "InvalidStateError"
+      );
+    }
+    const streams = [].slice.call(arguments, 1);
+    if (streams.length !== 1 || !streams[0].getTracks().find((t) => t === track)) {
+      throw new DOMException(
+        "The adapter.js addTrack polyfill only supports a single  stream which is associated with the specified track.",
+        "NotSupportedError"
+      );
+    }
+    const alreadyExists = this.getSenders().find((s) => s.track === track);
+    if (alreadyExists) {
+      throw new DOMException(
+        "Track already exists.",
+        "InvalidAccessError"
+      );
+    }
+    this._streams = this._streams || {};
+    this._reverseStreams = this._reverseStreams || {};
+    const oldStream = this._streams[stream.id];
+    if (oldStream) {
+      oldStream.addTrack(track);
+      Promise.resolve().then(() => {
+        this.dispatchEvent(new Event("negotiationneeded"));
+      });
+    } else {
+      const newStream = new window2.MediaStream([track]);
+      this._streams[stream.id] = newStream;
+      this._reverseStreams[newStream.id] = stream;
+      this.addStream(newStream);
+    }
+    return this.getSenders().find((s) => s.track === track);
+  };
+  function replaceInternalStreamId(pc, description) {
+    let sdp2 = description.sdp;
+    Object.keys(pc._reverseStreams || []).forEach((internalId) => {
+      const externalStream = pc._reverseStreams[internalId];
+      const internalStream = pc._streams[externalStream.id];
+      sdp2 = sdp2.replace(
+        new RegExp(internalStream.id, "g"),
+        externalStream.id
+      );
+    });
+    return new RTCSessionDescription({
+      type: description.type,
+      sdp: sdp2
+    });
+  }
+  function replaceExternalStreamId(pc, description) {
+    let sdp2 = description.sdp;
+    Object.keys(pc._reverseStreams || []).forEach((internalId) => {
+      const externalStream = pc._reverseStreams[internalId];
+      const internalStream = pc._streams[externalStream.id];
+      sdp2 = sdp2.replace(
+        new RegExp(externalStream.id, "g"),
+        internalStream.id
+      );
+    });
+    return new RTCSessionDescription({
+      type: description.type,
+      sdp: sdp2
+    });
+  }
+  ["createOffer", "createAnswer"].forEach(function(method) {
+    const nativeMethod = window2.RTCPeerConnection.prototype[method];
+    const methodObj = { [method]() {
+      const args = arguments;
+      const isLegacyCall = arguments.length && typeof arguments[0] === "function";
+      if (isLegacyCall) {
+        return nativeMethod.apply(this, [
+          (description) => {
+            const desc = replaceInternalStreamId(this, description);
+            args[0].apply(null, [desc]);
+          },
+          (err) => {
+            if (args[1]) {
+              args[1].apply(null, err);
+            }
+          },
+          arguments[2]
+        ]);
+      }
+      return nativeMethod.apply(this, arguments).then((description) => replaceInternalStreamId(this, description));
+    } };
+    window2.RTCPeerConnection.prototype[method] = methodObj[method];
+  });
+  const origSetLocalDescription = window2.RTCPeerConnection.prototype.setLocalDescription;
+  window2.RTCPeerConnection.prototype.setLocalDescription = function setLocalDescription() {
+    if (!arguments.length || !arguments[0].type) {
+      return origSetLocalDescription.apply(this, arguments);
+    }
+    arguments[0] = replaceExternalStreamId(this, arguments[0]);
+    return origSetLocalDescription.apply(this, arguments);
+  };
+  const origLocalDescription = Object.getOwnPropertyDescriptor(
+    window2.RTCPeerConnection.prototype,
+    "localDescription"
+  );
+  Object.defineProperty(
+    window2.RTCPeerConnection.prototype,
+    "localDescription",
+    {
+      get() {
+        const description = origLocalDescription.get.apply(this);
+        if (description.type === "") {
+          return description;
+        }
+        return replaceInternalStreamId(this, description);
+      }
+    }
+  );
+  window2.RTCPeerConnection.prototype.removeTrack = function removeTrack(sender) {
+    if (this.signalingState === "closed") {
+      throw new DOMException(
+        "The RTCPeerConnection's signalingState is 'closed'.",
+        "InvalidStateError"
+      );
+    }
+    if (!sender._pc) {
+      throw new DOMException("Argument 1 of RTCPeerConnection.removeTrack does not implement interface RTCRtpSender.", "TypeError");
+    }
+    const isLocal = sender._pc === this;
+    if (!isLocal) {
+      throw new DOMException(
+        "Sender was not created by this connection.",
+        "InvalidAccessError"
+      );
+    }
+    this._streams = this._streams || {};
+    let stream;
+    Object.keys(this._streams).forEach((streamid) => {
+      const hasTrack = this._streams[streamid].getTracks().find((track) => sender.track === track);
+      if (hasTrack) {
+        stream = this._streams[streamid];
+      }
+    });
+    if (stream) {
+      if (stream.getTracks().length === 1) {
+        this.removeStream(this._reverseStreams[stream.id]);
+      } else {
+        stream.removeTrack(sender.track);
+      }
+      this.dispatchEvent(new Event("negotiationneeded"));
+    }
+  };
+}
+function shimPeerConnection(window2, browserDetails) {
+  if (!window2.RTCPeerConnection && window2.webkitRTCPeerConnection) {
+    window2.RTCPeerConnection = window2.webkitRTCPeerConnection;
+  }
+  if (!window2.RTCPeerConnection) {
+    return;
+  }
+  if (browserDetails.version < 53) {
+    ["setLocalDescription", "setRemoteDescription", "addIceCandidate"].forEach(function(method) {
+      const nativeMethod = window2.RTCPeerConnection.prototype[method];
+      const methodObj = { [method]() {
+        arguments[0] = new (method === "addIceCandidate" ? window2.RTCIceCandidate : window2.RTCSessionDescription)(arguments[0]);
+        return nativeMethod.apply(this, arguments);
+      } };
+      window2.RTCPeerConnection.prototype[method] = methodObj[method];
+    });
+  }
+}
+function fixNegotiationNeeded(window2, browserDetails) {
+  if (browserDetails.version > 102) {
+    return;
+  }
+  wrapPeerConnectionEvent(window2, "negotiationneeded", (e) => {
+    const pc = e.target;
+    if (browserDetails.version < 72 || pc.getConfiguration && pc.getConfiguration().sdpSemantics === "plan-b") {
+      if (pc.signalingState !== "stable") {
+        return;
+      }
+    }
+    return e;
+  });
+}
+
+// node_modules/webrtc-adapter/src/js/firefox/firefox_shim.js
+var firefox_shim_exports = {};
+__export(firefox_shim_exports, {
+  shimAddTransceiver: () => shimAddTransceiver,
+  shimCreateAnswer: () => shimCreateAnswer,
+  shimCreateOffer: () => shimCreateOffer,
+  shimGetDisplayMedia: () => shimGetDisplayMedia,
+  shimGetParameters: () => shimGetParameters,
+  shimGetStats: () => shimGetStats,
+  shimGetUserMedia: () => shimGetUserMedia2,
+  shimOnTrack: () => shimOnTrack2,
+  shimPeerConnection: () => shimPeerConnection2,
+  shimRTCDataChannel: () => shimRTCDataChannel,
+  shimReceiverGetStats: () => shimReceiverGetStats,
+  shimRemoveStream: () => shimRemoveStream,
+  shimSenderGetStats: () => shimSenderGetStats
+});
+
+// node_modules/webrtc-adapter/src/js/firefox/getusermedia.js
+function shimGetUserMedia2(window2, browserDetails) {
+  const navigator2 = window2 && window2.navigator;
+  if (!navigator2.mediaDevices) {
+    return;
+  }
+  const MediaStreamTrack = window2 && window2.MediaStreamTrack;
+  navigator2.getUserMedia = function(constraints, onSuccess, onError) {
+    deprecated(
+      "navigator.getUserMedia",
+      "navigator.mediaDevices.getUserMedia"
+    );
+    navigator2.mediaDevices.getUserMedia(constraints).then(onSuccess, onError);
+  };
+  if (!(browserDetails.version > 55 && "autoGainControl" in navigator2.mediaDevices.getSupportedConstraints())) {
+    const remap = function(obj, a, b) {
+      if (a in obj && !(b in obj)) {
+        obj[b] = obj[a];
+        delete obj[a];
+      }
+    };
+    const nativeGetUserMedia = navigator2.mediaDevices.getUserMedia.bind(navigator2.mediaDevices);
+    navigator2.mediaDevices.getUserMedia = function(c) {
+      if (typeof c === "object" && typeof c.audio === "object") {
+        c = JSON.parse(JSON.stringify(c));
+        remap(c.audio, "autoGainControl", "mozAutoGainControl");
+        remap(c.audio, "noiseSuppression", "mozNoiseSuppression");
+      }
+      return nativeGetUserMedia(c);
+    };
+    if (MediaStreamTrack && MediaStreamTrack.prototype.getSettings) {
+      const nativeGetSettings = MediaStreamTrack.prototype.getSettings;
+      MediaStreamTrack.prototype.getSettings = function() {
+        const obj = nativeGetSettings.apply(this, arguments);
+        remap(obj, "mozAutoGainControl", "autoGainControl");
+        remap(obj, "mozNoiseSuppression", "noiseSuppression");
+        return obj;
+      };
+    }
+    if (MediaStreamTrack && MediaStreamTrack.prototype.applyConstraints) {
+      const nativeApplyConstraints = MediaStreamTrack.prototype.applyConstraints;
+      MediaStreamTrack.prototype.applyConstraints = function(c) {
+        if (this.kind === "audio" && typeof c === "object") {
+          c = JSON.parse(JSON.stringify(c));
+          remap(c, "autoGainControl", "mozAutoGainControl");
+          remap(c, "noiseSuppression", "mozNoiseSuppression");
+        }
+        return nativeApplyConstraints.apply(this, [c]);
+      };
+    }
+  }
+}
+
+// node_modules/webrtc-adapter/src/js/firefox/getdisplaymedia.js
+function shimGetDisplayMedia(window2, preferredMediaSource) {
+  if (!window2.navigator.mediaDevices) {
+    return;
+  }
+  if (window2.navigator.mediaDevices && "getDisplayMedia" in window2.navigator.mediaDevices) {
+    return;
+  }
+  window2.navigator.mediaDevices.getDisplayMedia = function getDisplayMedia(constraints) {
+    if (!(constraints && constraints.video)) {
+      const err = new DOMException("getDisplayMedia without video constraints is undefined");
+      err.name = "NotFoundError";
+      err.code = 8;
+      return Promise.reject(err);
+    }
+    if (constraints.video === true) {
+      constraints.video = { mediaSource: preferredMediaSource };
+    } else {
+      constraints.video.mediaSource = preferredMediaSource;
+    }
+    return window2.navigator.mediaDevices.getUserMedia(constraints);
+  };
+}
+
+// node_modules/webrtc-adapter/src/js/firefox/firefox_shim.js
+function shimOnTrack2(window2) {
+  if (typeof window2 === "object" && window2.RTCTrackEvent && "receiver" in window2.RTCTrackEvent.prototype && !("transceiver" in window2.RTCTrackEvent.prototype)) {
+    Object.defineProperty(window2.RTCTrackEvent.prototype, "transceiver", {
+      get() {
+        return { receiver: this.receiver };
+      }
+    });
+  }
+}
+function shimPeerConnection2(window2, browserDetails) {
+  if (typeof window2 !== "object" || !(window2.RTCPeerConnection || window2.mozRTCPeerConnection)) {
+    return;
+  }
+  if (!window2.RTCPeerConnection && window2.mozRTCPeerConnection) {
+    window2.RTCPeerConnection = window2.mozRTCPeerConnection;
+  }
+  if (browserDetails.version < 53) {
+    ["setLocalDescription", "setRemoteDescription", "addIceCandidate"].forEach(function(method) {
+      const nativeMethod = window2.RTCPeerConnection.prototype[method];
+      const methodObj = { [method]() {
+        arguments[0] = new (method === "addIceCandidate" ? window2.RTCIceCandidate : window2.RTCSessionDescription)(arguments[0]);
+        return nativeMethod.apply(this, arguments);
+      } };
+      window2.RTCPeerConnection.prototype[method] = methodObj[method];
+    });
+  }
+}
+function shimGetStats(window2, browserDetails) {
+  if (typeof window2 !== "object" || !(window2.RTCPeerConnection || window2.mozRTCPeerConnection)) {
+    return;
+  }
+  if (browserDetails.version >= 151) {
+    return;
+  }
+  const modernStatsTypes = {
+    inboundrtp: "inbound-rtp",
+    outboundrtp: "outbound-rtp",
+    candidatepair: "candidate-pair",
+    localcandidate: "local-candidate",
+    remotecandidate: "remote-candidate"
+  };
+  const nativeGetStats = window2.RTCPeerConnection.prototype.getStats;
+  window2.RTCPeerConnection.prototype.getStats = function getStats() {
+    const [selector, onSucc, onErr] = arguments;
+    if (this.signalingState === "closed") {
+      return Promise.resolve(/* @__PURE__ */ new Map());
+    }
+    return nativeGetStats.apply(this, [selector || null]).then((stats) => {
+      if (browserDetails.version < 53 && !onSucc) {
+        try {
+          stats.forEach((stat) => {
+            stat.type = modernStatsTypes[stat.type] || stat.type;
+          });
+        } catch (e) {
+          if (e.name !== "TypeError") {
+            throw e;
+          }
+          stats.forEach((stat, i) => {
+            stats.set(i, Object.assign({}, stat, {
+              type: modernStatsTypes[stat.type] || stat.type
+            }));
+          });
+        }
+      }
+      return stats;
+    }).then(onSucc, onErr);
+  };
+}
+function shimSenderGetStats(window2) {
+  if (!(typeof window2 === "object" && window2.RTCPeerConnection && window2.RTCRtpSender)) {
+    return;
+  }
+  if (window2.RTCRtpSender && "getStats" in window2.RTCRtpSender.prototype) {
+    return;
+  }
+  const origGetSenders = window2.RTCPeerConnection.prototype.getSenders;
+  if (origGetSenders) {
+    window2.RTCPeerConnection.prototype.getSenders = function getSenders() {
+      const senders = origGetSenders.apply(this, []);
+      senders.forEach((sender) => sender._pc = this);
+      return senders;
+    };
+  }
+  const origAddTrack = window2.RTCPeerConnection.prototype.addTrack;
+  if (origAddTrack) {
+    window2.RTCPeerConnection.prototype.addTrack = function addTrack() {
+      const sender = origAddTrack.apply(this, arguments);
+      sender._pc = this;
+      return sender;
+    };
+  }
+  window2.RTCRtpSender.prototype.getStats = function getStats() {
+    return this.track ? this._pc.getStats(this.track) : Promise.resolve(/* @__PURE__ */ new Map());
+  };
+}
+function shimReceiverGetStats(window2) {
+  if (!(typeof window2 === "object" && window2.RTCPeerConnection && window2.RTCRtpSender)) {
+    return;
+  }
+  if (window2.RTCRtpSender && "getStats" in window2.RTCRtpReceiver.prototype) {
+    return;
+  }
+  const origGetReceivers = window2.RTCPeerConnection.prototype.getReceivers;
+  if (origGetReceivers) {
+    window2.RTCPeerConnection.prototype.getReceivers = function getReceivers() {
+      const receivers = origGetReceivers.apply(this, []);
+      receivers.forEach((receiver) => receiver._pc = this);
+      return receivers;
+    };
+  }
+  wrapPeerConnectionEvent(window2, "track", (e) => {
+    e.receiver._pc = e.srcElement;
+    return e;
+  });
+  window2.RTCRtpReceiver.prototype.getStats = function getStats() {
+    return this._pc.getStats(this.track);
+  };
+}
+function shimRemoveStream(window2) {
+  if (!window2.RTCPeerConnection || "removeStream" in window2.RTCPeerConnection.prototype) {
+    return;
+  }
+  window2.RTCPeerConnection.prototype.removeStream = function removeStream(stream) {
+    deprecated("removeStream", "removeTrack");
+    this.getSenders().forEach((sender) => {
+      if (sender.track && stream.getTracks().includes(sender.track)) {
+        this.removeTrack(sender);
+      }
+    });
+  };
+}
+function shimRTCDataChannel(window2) {
+  if (window2.DataChannel && !window2.RTCDataChannel) {
+    window2.RTCDataChannel = window2.DataChannel;
+  }
+}
+function shimAddTransceiver(window2, browserDetails) {
+  if (!(typeof window2 === "object" && window2.RTCPeerConnection)) {
+    return;
+  }
+  if (browserDetails.version >= 110) {
+    return;
+  }
+  const origAddTransceiver = window2.RTCPeerConnection.prototype.addTransceiver;
+  if (origAddTransceiver) {
+    window2.RTCPeerConnection.prototype.addTransceiver = function addTransceiver() {
+      this.setParametersPromises = [];
+      let sendEncodings = arguments[1] && arguments[1].sendEncodings;
+      if (sendEncodings === void 0) {
+        sendEncodings = [];
+      }
+      sendEncodings = [...sendEncodings];
+      const shouldPerformCheck = sendEncodings.length > 0;
+      if (shouldPerformCheck) {
+        sendEncodings.forEach((encodingParam) => {
+          if ("rid" in encodingParam) {
+            const ridRegex = /^[a-z0-9]{0,16}$/i;
+            if (!ridRegex.test(encodingParam.rid)) {
+              throw new TypeError("Invalid RID value provided.");
+            }
+          }
+          if ("scaleResolutionDownBy" in encodingParam) {
+            if (!(parseFloat(encodingParam.scaleResolutionDownBy) >= 1)) {
+              throw new RangeError("scale_resolution_down_by must be >= 1.0");
+            }
+          }
+          if ("maxFramerate" in encodingParam) {
+            if (!(parseFloat(encodingParam.maxFramerate) >= 0)) {
+              throw new RangeError("max_framerate must be >= 0.0");
+            }
+          }
+        });
+      }
+      const transceiver = origAddTransceiver.apply(this, arguments);
+      if (shouldPerformCheck) {
+        const { sender } = transceiver;
+        const params = sender.getParameters();
+        if (!("encodings" in params) || // Avoid being fooled by patched getParameters() below.
+        params.encodings.length === 1 && Object.keys(params.encodings[0]).length === 0) {
+          params.encodings = sendEncodings;
+          sender.sendEncodings = sendEncodings;
+          this.setParametersPromises.push(
+            sender.setParameters(params).then(() => {
+              delete sender.sendEncodings;
+            }).catch(() => {
+              delete sender.sendEncodings;
+            })
+          );
+        }
+      }
+      return transceiver;
+    };
+  }
+}
+function shimGetParameters(window2, browserDetails) {
+  if (!(typeof window2 === "object" && window2.RTCRtpSender)) {
+    return;
+  }
+  if (browserDetails.version >= 110) {
+    return;
+  }
+  const origGetParameters = window2.RTCRtpSender.prototype.getParameters;
+  if (origGetParameters) {
+    window2.RTCRtpSender.prototype.getParameters = function getParameters() {
+      const params = origGetParameters.apply(this, arguments);
+      if (!("encodings" in params)) {
+        params.encodings = [].concat(this.sendEncodings || [{}]);
+      }
+      return params;
+    };
+  }
+}
+function shimCreateOffer(window2, browserDetails) {
+  if (!(typeof window2 === "object" && window2.RTCPeerConnection)) {
+    return;
+  }
+  if (browserDetails.version >= 110) {
+    return;
+  }
+  const origCreateOffer = window2.RTCPeerConnection.prototype.createOffer;
+  window2.RTCPeerConnection.prototype.createOffer = function createOffer() {
+    if (this.setParametersPromises && this.setParametersPromises.length) {
+      return Promise.all(this.setParametersPromises).then(() => {
+        return origCreateOffer.apply(this, arguments);
+      }).finally(() => {
+        this.setParametersPromises = [];
+      });
+    }
+    return origCreateOffer.apply(this, arguments);
+  };
+}
+function shimCreateAnswer(window2, browserDetails) {
+  if (!(typeof window2 === "object" && window2.RTCPeerConnection)) {
+    return;
+  }
+  if (browserDetails.version >= 110) {
+    return;
+  }
+  const origCreateAnswer = window2.RTCPeerConnection.prototype.createAnswer;
+  window2.RTCPeerConnection.prototype.createAnswer = function createAnswer() {
+    if (this.setParametersPromises && this.setParametersPromises.length) {
+      return Promise.all(this.setParametersPromises).then(() => {
+        return origCreateAnswer.apply(this, arguments);
+      }).finally(() => {
+        this.setParametersPromises = [];
+      });
+    }
+    return origCreateAnswer.apply(this, arguments);
+  };
+}
+
+// node_modules/webrtc-adapter/src/js/safari/safari_shim.js
+var safari_shim_exports = {};
+__export(safari_shim_exports, {
+  shimAudioContext: () => shimAudioContext,
+  shimCallbacksAPI: () => shimCallbacksAPI,
+  shimConstraints: () => shimConstraints,
+  shimCreateOfferLegacy: () => shimCreateOfferLegacy,
+  shimGetUserMedia: () => shimGetUserMedia3,
+  shimLocalStreamsAPI: () => shimLocalStreamsAPI,
+  shimRTCIceServerUrls: () => shimRTCIceServerUrls,
+  shimRemoteStreamsAPI: () => shimRemoteStreamsAPI,
+  shimTrackEventTransceiver: () => shimTrackEventTransceiver
+});
+function shimLocalStreamsAPI(window2) {
+  if (typeof window2 !== "object" || !window2.RTCPeerConnection) {
+    return;
+  }
+  if (!("getLocalStreams" in window2.RTCPeerConnection.prototype)) {
+    window2.RTCPeerConnection.prototype.getLocalStreams = function getLocalStreams() {
+      if (!this._localStreams) {
+        this._localStreams = [];
+      }
+      return this._localStreams;
+    };
+  }
+  if (!("addStream" in window2.RTCPeerConnection.prototype)) {
+    const _addTrack = window2.RTCPeerConnection.prototype.addTrack;
+    window2.RTCPeerConnection.prototype.addStream = function addStream(stream) {
+      if (!this._localStreams) {
+        this._localStreams = [];
+      }
+      if (!this._localStreams.includes(stream)) {
+        this._localStreams.push(stream);
+      }
+      stream.getAudioTracks().forEach((track) => _addTrack.call(
+        this,
+        track,
+        stream
+      ));
+      stream.getVideoTracks().forEach((track) => _addTrack.call(
+        this,
+        track,
+        stream
+      ));
+    };
+    window2.RTCPeerConnection.prototype.addTrack = function addTrack(track, ...streams) {
+      if (streams) {
+        streams.forEach((stream) => {
+          if (!this._localStreams) {
+            this._localStreams = [stream];
+          } else if (!this._localStreams.includes(stream)) {
+            this._localStreams.push(stream);
+          }
+        });
+      }
+      return _addTrack.apply(this, arguments);
+    };
+  }
+  if (!("removeStream" in window2.RTCPeerConnection.prototype)) {
+    window2.RTCPeerConnection.prototype.removeStream = function removeStream(stream) {
+      if (!this._localStreams) {
+        this._localStreams = [];
+      }
+      const index = this._localStreams.indexOf(stream);
+      if (index === -1) {
+        return;
+      }
+      this._localStreams.splice(index, 1);
+      const tracks = stream.getTracks();
+      this.getSenders().forEach((sender) => {
+        if (tracks.includes(sender.track)) {
+          this.removeTrack(sender);
+        }
+      });
+    };
+  }
+}
+function shimRemoteStreamsAPI(window2) {
+  if (typeof window2 !== "object" || !window2.RTCPeerConnection) {
+    return;
+  }
+  if (!("getRemoteStreams" in window2.RTCPeerConnection.prototype)) {
+    window2.RTCPeerConnection.prototype.getRemoteStreams = function getRemoteStreams() {
+      return this._remoteStreams ? this._remoteStreams : [];
+    };
+  }
+  if (!("onaddstream" in window2.RTCPeerConnection.prototype)) {
+    Object.defineProperty(window2.RTCPeerConnection.prototype, "onaddstream", {
+      get() {
+        return this._onaddstream;
+      },
+      set(f) {
+        if (this._onaddstream) {
+          this.removeEventListener("addstream", this._onaddstream);
+          this.removeEventListener("track", this._onaddstreampoly);
+        }
+        this.addEventListener("addstream", this._onaddstream = f);
+        this.addEventListener("track", this._onaddstreampoly = (e) => {
+          e.streams.forEach((stream) => {
+            if (!this._remoteStreams) {
+              this._remoteStreams = [];
+            }
+            if (this._remoteStreams.includes(stream)) {
+              return;
+            }
+            this._remoteStreams.push(stream);
+            const event = new Event("addstream");
+            event.stream = stream;
+            this.dispatchEvent(event);
+          });
+        });
+      }
+    });
+    const origSetRemoteDescription = window2.RTCPeerConnection.prototype.setRemoteDescription;
+    window2.RTCPeerConnection.prototype.setRemoteDescription = function setRemoteDescription() {
+      const pc = this;
+      if (!this._onaddstreampoly) {
+        this.addEventListener("track", this._onaddstreampoly = function(e) {
+          e.streams.forEach((stream) => {
+            if (!pc._remoteStreams) {
+              pc._remoteStreams = [];
+            }
+            if (pc._remoteStreams.indexOf(stream) >= 0) {
+              return;
+            }
+            pc._remoteStreams.push(stream);
+            const event = new Event("addstream");
+            event.stream = stream;
+            pc.dispatchEvent(event);
+          });
+        });
+      }
+      return origSetRemoteDescription.apply(pc, arguments);
+    };
+  }
+}
+function shimCallbacksAPI(window2) {
+  if (typeof window2 !== "object" || !window2.RTCPeerConnection) {
+    return;
+  }
+  const prototype = window2.RTCPeerConnection.prototype;
+  const origCreateOffer = prototype.createOffer;
+  const origCreateAnswer = prototype.createAnswer;
+  const setLocalDescription = prototype.setLocalDescription;
+  const setRemoteDescription = prototype.setRemoteDescription;
+  const addIceCandidate = prototype.addIceCandidate;
+  prototype.createOffer = function createOffer(successCallback, failureCallback) {
+    const options = arguments.length >= 2 ? arguments[2] : arguments[0];
+    const promise = origCreateOffer.apply(this, [options]);
+    if (!failureCallback) {
+      return promise;
+    }
+    promise.then(successCallback, failureCallback);
+    return Promise.resolve();
+  };
+  prototype.createAnswer = function createAnswer(successCallback, failureCallback) {
+    const options = arguments.length >= 2 ? arguments[2] : arguments[0];
+    const promise = origCreateAnswer.apply(this, [options]);
+    if (!failureCallback) {
+      return promise;
+    }
+    promise.then(successCallback, failureCallback);
+    return Promise.resolve();
+  };
+  let withCallback = function(description, successCallback, failureCallback) {
+    const promise = setLocalDescription.apply(this, [description]);
+    if (!failureCallback) {
+      return promise;
+    }
+    promise.then(successCallback, failureCallback);
+    return Promise.resolve();
+  };
+  prototype.setLocalDescription = withCallback;
+  withCallback = function(description, successCallback, failureCallback) {
+    const promise = setRemoteDescription.apply(this, [description]);
+    if (!failureCallback) {
+      return promise;
+    }
+    promise.then(successCallback, failureCallback);
+    return Promise.resolve();
+  };
+  prototype.setRemoteDescription = withCallback;
+  withCallback = function(candidate, successCallback, failureCallback) {
+    const promise = addIceCandidate.apply(this, [candidate]);
+    if (!failureCallback) {
+      return promise;
+    }
+    promise.then(successCallback, failureCallback);
+    return Promise.resolve();
+  };
+  prototype.addIceCandidate = withCallback;
+}
+function shimGetUserMedia3(window2) {
+  const navigator2 = window2 && window2.navigator;
+  if (navigator2.mediaDevices && navigator2.mediaDevices.getUserMedia) {
+    const mediaDevices = navigator2.mediaDevices;
+    const _getUserMedia = mediaDevices.getUserMedia.bind(mediaDevices);
+    navigator2.mediaDevices.getUserMedia = (constraints) => {
+      return _getUserMedia(shimConstraints(constraints));
+    };
+  }
+  if (!navigator2.getUserMedia && navigator2.mediaDevices && navigator2.mediaDevices.getUserMedia) {
+    navigator2.getUserMedia = function getUserMedia(constraints, cb, errcb) {
+      navigator2.mediaDevices.getUserMedia(constraints).then(cb, errcb);
+    }.bind(navigator2);
+  }
+}
+function shimConstraints(constraints) {
+  if (constraints && constraints.video !== void 0) {
+    return Object.assign(
+      {},
+      constraints,
+      { video: compactObject(constraints.video) }
+    );
+  }
+  return constraints;
+}
+function shimRTCIceServerUrls(window2) {
+  if (!window2.RTCPeerConnection) {
+    return;
+  }
+  const OrigPeerConnection = window2.RTCPeerConnection;
+  window2.RTCPeerConnection = function RTCPeerConnection2(pcConfig, pcConstraints) {
+    if (pcConfig && pcConfig.iceServers) {
+      const newIceServers = [];
+      for (let i = 0; i < pcConfig.iceServers.length; i++) {
+        let server = pcConfig.iceServers[i];
+        if (server.urls === void 0 && server.url) {
+          deprecated("RTCIceServer.url", "RTCIceServer.urls");
+          server = JSON.parse(JSON.stringify(server));
+          server.urls = server.url;
+          delete server.url;
+          newIceServers.push(server);
+        } else {
+          newIceServers.push(pcConfig.iceServers[i]);
+        }
+      }
+      pcConfig.iceServers = newIceServers;
+    }
+    return new OrigPeerConnection(pcConfig, pcConstraints);
+  };
+  window2.RTCPeerConnection.prototype = OrigPeerConnection.prototype;
+  if ("generateCertificate" in OrigPeerConnection) {
+    Object.defineProperty(window2.RTCPeerConnection, "generateCertificate", {
+      get() {
+        return OrigPeerConnection.generateCertificate;
+      }
+    });
+  }
+}
+function shimTrackEventTransceiver(window2) {
+  if (typeof window2 === "object" && window2.RTCTrackEvent && "receiver" in window2.RTCTrackEvent.prototype && !("transceiver" in window2.RTCTrackEvent.prototype)) {
+    Object.defineProperty(window2.RTCTrackEvent.prototype, "transceiver", {
+      get() {
+        return { receiver: this.receiver };
+      }
+    });
+  }
+}
+function shimCreateOfferLegacy(window2) {
+  const origCreateOffer = window2.RTCPeerConnection.prototype.createOffer;
+  window2.RTCPeerConnection.prototype.createOffer = function createOffer(offerOptions) {
+    if (offerOptions) {
+      if (typeof offerOptions.offerToReceiveAudio !== "undefined") {
+        offerOptions.offerToReceiveAudio = !!offerOptions.offerToReceiveAudio;
+      }
+      const audioTransceiver = this.getTransceivers().find((transceiver) => transceiver.receiver.track.kind === "audio");
+      if (offerOptions.offerToReceiveAudio === false && audioTransceiver) {
+        if (audioTransceiver.direction === "sendrecv") {
+          if (audioTransceiver.setDirection) {
+            audioTransceiver.setDirection("sendonly");
+          } else {
+            audioTransceiver.direction = "sendonly";
+          }
+        } else if (audioTransceiver.direction === "recvonly") {
+          if (audioTransceiver.setDirection) {
+            audioTransceiver.setDirection("inactive");
+          } else {
+            audioTransceiver.direction = "inactive";
+          }
+        }
+      } else if (offerOptions.offerToReceiveAudio === true && !audioTransceiver) {
+        this.addTransceiver("audio", { direction: "recvonly" });
+      }
+      if (typeof offerOptions.offerToReceiveVideo !== "undefined") {
+        offerOptions.offerToReceiveVideo = !!offerOptions.offerToReceiveVideo;
+      }
+      const videoTransceiver = this.getTransceivers().find((transceiver) => transceiver.receiver.track.kind === "video");
+      if (offerOptions.offerToReceiveVideo === false && videoTransceiver) {
+        if (videoTransceiver.direction === "sendrecv") {
+          if (videoTransceiver.setDirection) {
+            videoTransceiver.setDirection("sendonly");
+          } else {
+            videoTransceiver.direction = "sendonly";
+          }
+        } else if (videoTransceiver.direction === "recvonly") {
+          if (videoTransceiver.setDirection) {
+            videoTransceiver.setDirection("inactive");
+          } else {
+            videoTransceiver.direction = "inactive";
+          }
+        }
+      } else if (offerOptions.offerToReceiveVideo === true && !videoTransceiver) {
+        this.addTransceiver("video", { direction: "recvonly" });
+      }
+    }
+    return origCreateOffer.apply(this, arguments);
+  };
+}
+function shimAudioContext(window2) {
+  if (typeof window2 !== "object" || window2.AudioContext) {
+    return;
+  }
+  window2.AudioContext = window2.webkitAudioContext;
+}
+
+// node_modules/webrtc-adapter/src/js/common_shim.js
+var common_shim_exports = {};
+__export(common_shim_exports, {
+  removeExtmapAllowMixed: () => removeExtmapAllowMixed,
+  shimAddIceCandidateNullOrEmpty: () => shimAddIceCandidateNullOrEmpty,
+  shimConnectionState: () => shimConnectionState,
+  shimMaxMessageSize: () => shimMaxMessageSize,
+  shimParameterlessSetLocalDescription: () => shimParameterlessSetLocalDescription,
+  shimRTCIceCandidate: () => shimRTCIceCandidate,
+  shimRTCIceCandidateRelayProtocol: () => shimRTCIceCandidateRelayProtocol,
+  shimSendThrowTypeError: () => shimSendThrowTypeError
+});
+var import_sdp = __toESM(require_sdp());
+function shimRTCIceCandidate(window2) {
+  if (!window2.RTCIceCandidate || window2.RTCIceCandidate && "foundation" in window2.RTCIceCandidate.prototype) {
+    return;
+  }
+  const NativeRTCIceCandidate = window2.RTCIceCandidate;
+  window2.RTCIceCandidate = function RTCIceCandidate(args) {
+    if (typeof args === "object" && args.candidate && args.candidate.indexOf("a=") === 0) {
+      args = JSON.parse(JSON.stringify(args));
+      args.candidate = args.candidate.substring(2);
+    }
+    if (args.candidate && args.candidate.length) {
+      const nativeCandidate = new NativeRTCIceCandidate(args);
+      const parsedCandidate = import_sdp.default.parseCandidate(args.candidate);
+      for (const key in parsedCandidate) {
+        if (!(key in nativeCandidate)) {
+          Object.defineProperty(
+            nativeCandidate,
+            key,
+            { value: parsedCandidate[key] }
+          );
+        }
+      }
+      nativeCandidate.toJSON = function toJSON() {
+        return {
+          candidate: nativeCandidate.candidate,
+          sdpMid: nativeCandidate.sdpMid,
+          sdpMLineIndex: nativeCandidate.sdpMLineIndex,
+          usernameFragment: nativeCandidate.usernameFragment
+        };
+      };
+      return nativeCandidate;
+    }
+    return new NativeRTCIceCandidate(args);
+  };
+  window2.RTCIceCandidate.prototype = NativeRTCIceCandidate.prototype;
+  wrapPeerConnectionEvent(window2, "icecandidate", (e) => {
+    if (e.candidate) {
+      Object.defineProperty(e, "candidate", {
+        value: new window2.RTCIceCandidate(e.candidate),
+        writable: "false"
+      });
+    }
+    return e;
+  });
+}
+function shimRTCIceCandidateRelayProtocol(window2) {
+  if (!window2.RTCIceCandidate || window2.RTCIceCandidate && "relayProtocol" in window2.RTCIceCandidate.prototype) {
+    return;
+  }
+  wrapPeerConnectionEvent(window2, "icecandidate", (e) => {
+    if (e.candidate) {
+      const parsedCandidate = import_sdp.default.parseCandidate(e.candidate.candidate);
+      if (parsedCandidate.type === "relay") {
+        e.candidate.relayProtocol = {
+          0: "tls",
+          1: "tcp",
+          2: "udp"
+        }[parsedCandidate.priority >> 24];
+      }
+    }
+    return e;
+  });
+}
+function shimMaxMessageSize(window2, browserDetails) {
+  if (!window2.RTCPeerConnection) {
+    return;
+  }
+  if (browserDetails.browser === "chrome" && browserDetails.version > 102) {
+    return;
+  }
+  if (browserDetails.browser === "firefox" && browserDetails.version >= 113) {
+    return;
+  }
+  if (!("sctp" in window2.RTCPeerConnection.prototype)) {
+    Object.defineProperty(window2.RTCPeerConnection.prototype, "sctp", {
+      get() {
+        return typeof this._sctp === "undefined" ? null : this._sctp;
+      }
+    });
+  }
+  const sctpInDescription = function(description) {
+    if (!description || !description.sdp) {
+      return false;
+    }
+    const sections = import_sdp.default.splitSections(description.sdp);
+    sections.shift();
+    return sections.some((mediaSection) => {
+      const mLine = import_sdp.default.parseMLine(mediaSection);
+      return mLine && mLine.kind === "application" && mLine.protocol.indexOf("SCTP") !== -1;
+    });
+  };
+  const getRemoteFirefoxVersion = function(description) {
+    const match = description.sdp.match(/mozilla...THIS_IS_SDPARTA-(\d+)/);
+    if (match === null || match.length < 2) {
+      return -1;
+    }
+    const version = parseInt(match[1], 10);
+    return version !== version ? -1 : version;
+  };
+  const getCanSendMaxMessageSize = function(remoteIsFirefox) {
+    let canSendMaxMessageSize = 65536;
+    if (browserDetails.browser === "firefox") {
+      if (browserDetails.version < 57) {
+        if (remoteIsFirefox === -1) {
+          canSendMaxMessageSize = 16384;
+        } else {
+          canSendMaxMessageSize = 2147483637;
+        }
+      } else if (browserDetails.version < 60) {
+        canSendMaxMessageSize = browserDetails.version === 57 ? 65535 : 65536;
+      } else {
+        canSendMaxMessageSize = 2147483637;
+      }
+    }
+    return canSendMaxMessageSize;
+  };
+  const getMaxMessageSize = function(description, remoteIsFirefox) {
+    let maxMessageSize = 65536;
+    if (browserDetails.browser === "firefox" && browserDetails.version === 57) {
+      maxMessageSize = 65535;
+    }
+    const match = import_sdp.default.matchPrefix(
+      description.sdp,
+      "a=max-message-size:"
+    );
+    if (match.length > 0) {
+      maxMessageSize = parseInt(match[0].substring(19), 10);
+    } else if (browserDetails.browser === "firefox" && remoteIsFirefox !== -1) {
+      maxMessageSize = 2147483637;
+    }
+    return maxMessageSize;
+  };
+  const origSetRemoteDescription = window2.RTCPeerConnection.prototype.setRemoteDescription;
+  window2.RTCPeerConnection.prototype.setRemoteDescription = function setRemoteDescription() {
+    this._sctp = null;
+    if (browserDetails.browser === "chrome" && browserDetails.version >= 76) {
+      const { sdpSemantics } = this.getConfiguration();
+      if (sdpSemantics === "plan-b") {
+        Object.defineProperty(this, "sctp", {
+          get() {
+            return typeof this._sctp === "undefined" ? null : this._sctp;
+          },
+          enumerable: true,
+          configurable: true
+        });
+      }
+    }
+    if (sctpInDescription(arguments[0])) {
+      const isFirefox = getRemoteFirefoxVersion(arguments[0]);
+      const canSendMMS = getCanSendMaxMessageSize(isFirefox);
+      const remoteMMS = getMaxMessageSize(arguments[0], isFirefox);
+      let maxMessageSize;
+      if (canSendMMS === 0 && remoteMMS === 0) {
+        maxMessageSize = Number.POSITIVE_INFINITY;
+      } else if (canSendMMS === 0 || remoteMMS === 0) {
+        maxMessageSize = Math.max(canSendMMS, remoteMMS);
+      } else {
+        maxMessageSize = Math.min(canSendMMS, remoteMMS);
+      }
+      const sctp = {};
+      Object.defineProperty(sctp, "maxMessageSize", {
+        get() {
+          return maxMessageSize;
+        }
+      });
+      this._sctp = sctp;
+    }
+    return origSetRemoteDescription.apply(this, arguments);
+  };
+}
+function shimSendThrowTypeError(window2, browserDetails) {
+  if (!(window2.RTCPeerConnection && "createDataChannel" in window2.RTCPeerConnection.prototype)) {
+    return;
+  }
+  if (browserDetails.browser === "chrome" && browserDetails.version >= 149) {
+    return;
+  }
+  if (browserDetails.browser === "firefox" && browserDetails.version > 60) {
+    return;
+  }
+  function wrapDcSend(dc, pc) {
+    const origDataChannelSend = dc.send;
+    dc.send = function send() {
+      const data = arguments[0];
+      const length = data.length || data.size || data.byteLength;
+      if (dc.readyState === "open" && pc.sctp && length > pc.sctp.maxMessageSize) {
+        throw new TypeError("Message too large (can send a maximum of " + pc.sctp.maxMessageSize + " bytes)");
+      }
+      return origDataChannelSend.apply(dc, arguments);
+    };
+  }
+  const origCreateDataChannel = window2.RTCPeerConnection.prototype.createDataChannel;
+  window2.RTCPeerConnection.prototype.createDataChannel = function createDataChannel() {
+    const dataChannel = origCreateDataChannel.apply(this, arguments);
+    wrapDcSend(dataChannel, this);
+    return dataChannel;
+  };
+  wrapPeerConnectionEvent(window2, "datachannel", (e) => {
+    wrapDcSend(e.channel, e.target);
+    return e;
+  });
+}
+function shimConnectionState(window2) {
+  if (!window2.RTCPeerConnection || "connectionState" in window2.RTCPeerConnection.prototype) {
+    return;
+  }
+  const proto = window2.RTCPeerConnection.prototype;
+  Object.defineProperty(proto, "connectionState", {
+    get() {
+      return {
+        completed: "connected",
+        checking: "connecting"
+      }[this.iceConnectionState] || this.iceConnectionState;
+    },
+    enumerable: true,
+    configurable: true
+  });
+  Object.defineProperty(proto, "onconnectionstatechange", {
+    get() {
+      return this._onconnectionstatechange || null;
+    },
+    set(cb) {
+      if (this._onconnectionstatechange) {
+        this.removeEventListener(
+          "connectionstatechange",
+          this._onconnectionstatechange
+        );
+        delete this._onconnectionstatechange;
+      }
+      if (cb) {
+        this.addEventListener(
+          "connectionstatechange",
+          this._onconnectionstatechange = cb
+        );
+      }
+    },
+    enumerable: true,
+    configurable: true
+  });
+  ["setLocalDescription", "setRemoteDescription"].forEach((method) => {
+    const origMethod = proto[method];
+    proto[method] = function() {
+      if (!this._connectionstatechangepoly) {
+        this._connectionstatechangepoly = (e) => {
+          const pc = e.target;
+          if (pc._lastConnectionState !== pc.connectionState) {
+            pc._lastConnectionState = pc.connectionState;
+            const newEvent = new Event("connectionstatechange", e);
+            pc.dispatchEvent(newEvent);
+          }
+          return e;
+        };
+        this.addEventListener(
+          "iceconnectionstatechange",
+          this._connectionstatechangepoly
+        );
+      }
+      return origMethod.apply(this, arguments);
+    };
+  });
+}
+function removeExtmapAllowMixed(window2, browserDetails) {
+  if (!window2.RTCPeerConnection) {
+    return;
+  }
+  if (browserDetails.browser === "chrome" && browserDetails.version >= 71) {
+    return;
+  }
+  if (browserDetails.browser === "safari" && browserDetails._safariVersion >= 13.1) {
+    return;
+  }
+  const nativeSRD = window2.RTCPeerConnection.prototype.setRemoteDescription;
+  window2.RTCPeerConnection.prototype.setRemoteDescription = function setRemoteDescription(desc) {
+    if (desc && desc.sdp && desc.sdp.indexOf("\na=extmap-allow-mixed") !== -1) {
+      const sdp2 = desc.sdp.split("\n").filter((line) => {
+        return line.trim() !== "a=extmap-allow-mixed";
+      }).join("\n");
+      if (window2.RTCSessionDescription && desc instanceof window2.RTCSessionDescription) {
+        arguments[0] = new window2.RTCSessionDescription({
+          type: desc.type,
+          sdp: sdp2
+        });
+      } else {
+        desc.sdp = sdp2;
+      }
+    }
+    return nativeSRD.apply(this, arguments);
+  };
+}
+function shimAddIceCandidateNullOrEmpty(window2, browserDetails) {
+  if (!(window2.RTCPeerConnection && window2.RTCPeerConnection.prototype)) {
+    return;
+  }
+  const nativeAddIceCandidate = window2.RTCPeerConnection.prototype.addIceCandidate;
+  if (!nativeAddIceCandidate || nativeAddIceCandidate.length === 0) {
+    return;
+  }
+  window2.RTCPeerConnection.prototype.addIceCandidate = function addIceCandidate() {
+    if (!arguments[0]) {
+      if (arguments[1]) {
+        arguments[1].apply(null);
+      }
+      return Promise.resolve();
+    }
+    if ((browserDetails.browser === "chrome" && browserDetails.version < 78 || browserDetails.browser === "firefox" && browserDetails.version < 68 || browserDetails.browser === "safari") && arguments[0] && arguments[0].candidate === "") {
+      return Promise.resolve();
+    }
+    return nativeAddIceCandidate.apply(this, arguments);
+  };
+}
+function shimParameterlessSetLocalDescription(window2, browserDetails) {
+  if (!(window2.RTCPeerConnection && window2.RTCPeerConnection.prototype)) {
+    return;
+  }
+  const nativeSetLocalDescription = window2.RTCPeerConnection.prototype.setLocalDescription;
+  if (!nativeSetLocalDescription || nativeSetLocalDescription.length === 0) {
+    return;
+  }
+  window2.RTCPeerConnection.prototype.setLocalDescription = function setLocalDescription() {
+    let desc = arguments[0] || {};
+    if (typeof desc !== "object" || desc.type && desc.sdp) {
+      return nativeSetLocalDescription.apply(this, arguments);
+    }
+    desc = { type: desc.type, sdp: desc.sdp };
+    if (!desc.type) {
+      switch (this.signalingState) {
+        case "stable":
+        case "have-local-offer":
+        case "have-remote-pranswer":
+          desc.type = "offer";
+          break;
+        default:
+          desc.type = "answer";
+          break;
+      }
+    }
+    if (desc.sdp || desc.type !== "offer" && desc.type !== "answer") {
+      return nativeSetLocalDescription.apply(this, [desc]);
+    }
+    const func = desc.type === "offer" ? this.createOffer : this.createAnswer;
+    return func.apply(this).then((d) => nativeSetLocalDescription.apply(this, [d]));
+  };
+}
+
+// node_modules/webrtc-adapter/src/js/adapter_factory.js
+var sdp = __toESM(require_sdp());
+function adapterFactory({ window: window2 } = {}, options = {
+  shimChrome: true,
+  shimFirefox: true,
+  shimSafari: true
+}) {
+  const logging2 = log;
+  const browserDetails = detectBrowser(window2);
+  const adapter2 = {
+    browserDetails,
+    commonShim: common_shim_exports,
+    extractVersion,
+    disableLog,
+    disableWarnings,
+    // Expose sdp as a convenience. For production apps include directly.
+    sdp
+  };
+  switch (browserDetails.browser) {
+    case "chrome":
+      if (!chrome_shim_exports || !shimPeerConnection || !options.shimChrome) {
+        logging2("Chrome shim is not included in this adapter release.");
+        return adapter2;
+      }
+      if (browserDetails.version === null) {
+        logging2("Chrome shim can not determine version, not shimming.");
+        return adapter2;
+      }
+      logging2("adapter.js shimming chrome.");
+      adapter2.browserShim = chrome_shim_exports;
+      shimAddIceCandidateNullOrEmpty(window2, browserDetails);
+      shimParameterlessSetLocalDescription(window2, browserDetails);
+      shimGetUserMedia(window2, browserDetails);
+      shimMediaStream(window2, browserDetails);
+      shimPeerConnection(window2, browserDetails);
+      shimOnTrack(window2, browserDetails);
+      shimAddTrackRemoveTrack(window2, browserDetails);
+      shimGetSendersWithDtmf(window2, browserDetails);
+      shimSenderReceiverGetStats(window2, browserDetails);
+      fixNegotiationNeeded(window2, browserDetails);
+      shimRTCIceCandidate(window2, browserDetails);
+      shimRTCIceCandidateRelayProtocol(window2, browserDetails);
+      shimConnectionState(window2, browserDetails);
+      shimMaxMessageSize(window2, browserDetails);
+      shimSendThrowTypeError(window2, browserDetails);
+      removeExtmapAllowMixed(window2, browserDetails);
+      break;
+    case "firefox":
+      if (!firefox_shim_exports || !shimPeerConnection2 || !options.shimFirefox) {
+        logging2("Firefox shim is not included in this adapter release.");
+        return adapter2;
+      }
+      logging2("adapter.js shimming firefox.");
+      adapter2.browserShim = firefox_shim_exports;
+      shimAddIceCandidateNullOrEmpty(window2, browserDetails);
+      shimParameterlessSetLocalDescription(window2, browserDetails);
+      shimGetUserMedia2(window2, browserDetails);
+      shimPeerConnection2(window2, browserDetails);
+      shimGetStats(window2, browserDetails);
+      shimOnTrack2(window2, browserDetails);
+      shimRemoveStream(window2, browserDetails);
+      shimSenderGetStats(window2, browserDetails);
+      shimReceiverGetStats(window2, browserDetails);
+      shimRTCDataChannel(window2, browserDetails);
+      shimAddTransceiver(window2, browserDetails);
+      shimGetParameters(window2, browserDetails);
+      shimCreateOffer(window2, browserDetails);
+      shimCreateAnswer(window2, browserDetails);
+      shimRTCIceCandidate(window2, browserDetails);
+      shimConnectionState(window2, browserDetails);
+      shimMaxMessageSize(window2, browserDetails);
+      shimSendThrowTypeError(window2, browserDetails);
+      break;
+    case "safari":
+      if (!safari_shim_exports || !options.shimSafari) {
+        logging2("Safari shim is not included in this adapter release.");
+        return adapter2;
+      }
+      logging2("adapter.js shimming safari.");
+      adapter2.browserShim = safari_shim_exports;
+      shimAddIceCandidateNullOrEmpty(window2, browserDetails);
+      shimParameterlessSetLocalDescription(window2, browserDetails);
+      shimRTCIceServerUrls(window2, browserDetails);
+      shimCreateOfferLegacy(window2, browserDetails);
+      shimCallbacksAPI(window2, browserDetails);
+      shimLocalStreamsAPI(window2, browserDetails);
+      shimRemoteStreamsAPI(window2, browserDetails);
+      shimTrackEventTransceiver(window2, browserDetails);
+      shimGetUserMedia3(window2, browserDetails);
+      shimAudioContext(window2, browserDetails);
+      shimRTCIceCandidate(window2, browserDetails);
+      shimRTCIceCandidateRelayProtocol(window2, browserDetails);
+      shimMaxMessageSize(window2, browserDetails);
+      shimSendThrowTypeError(window2, browserDetails);
+      removeExtmapAllowMixed(window2, browserDetails);
+      break;
+    default:
+      logging2("Unsupported browser!");
+      break;
+  }
+  return adapter2;
+}
+
+// node_modules/webrtc-adapter/src/js/adapter_core.js
+var adapter = adapterFactory({ window: typeof window === "undefined" ? void 0 : window });
+var adapter_core_default = adapter;
+
+// node_modules/peerjs/dist/bundler.mjs
+function $parcel$export(e, n, v, s) {
+  Object.defineProperty(e, n, { get: v, set: s, enumerable: true, configurable: true });
+}
+var $fcbcc7538a6776d5$export$f1c5f4c9cb95390b = class {
+  constructor() {
+    this.chunkedMTU = 16300;
+    this._dataCount = 1;
+    this.chunk = (blob) => {
+      const chunks2 = [];
+      const size = blob.byteLength;
+      const total = Math.ceil(size / this.chunkedMTU);
+      let index = 0;
+      let start2 = 0;
+      while (start2 < size) {
+        const end = Math.min(size, start2 + this.chunkedMTU);
+        const b = blob.slice(start2, end);
+        const chunk = {
+          __peerData: this._dataCount,
+          n: index,
+          data: b,
+          total
+        };
+        chunks2.push(chunk);
+        start2 = end;
+        index++;
+      }
+      this._dataCount++;
+      return chunks2;
+    };
+  }
+};
+function $fcbcc7538a6776d5$export$52c89ebcdc4f53f2(bufs) {
+  let size = 0;
+  for (const buf of bufs) size += buf.byteLength;
+  const result = new Uint8Array(size);
+  let offset = 0;
+  for (const buf of bufs) {
+    result.set(buf, offset);
+    offset += buf.byteLength;
+  }
+  return result;
+}
+var $fb63e766cfafaab9$var$webRTCAdapter = (
+  //@ts-ignore
+  (0, adapter_core_default).default || (0, adapter_core_default)
+);
+var $fb63e766cfafaab9$export$25be9502477c137d = new class {
+  isWebRTCSupported() {
+    return typeof RTCPeerConnection !== "undefined";
+  }
+  isBrowserSupported() {
+    const browser = this.getBrowser();
+    const version = this.getVersion();
+    const validBrowser = this.supportedBrowsers.includes(browser);
+    if (!validBrowser) return false;
+    if (browser === "chrome") return version >= this.minChromeVersion;
+    if (browser === "firefox") return version >= this.minFirefoxVersion;
+    if (browser === "safari") return !this.isIOS && version >= this.minSafariVersion;
+    return false;
+  }
+  getBrowser() {
+    return $fb63e766cfafaab9$var$webRTCAdapter.browserDetails.browser;
+  }
+  getVersion() {
+    return $fb63e766cfafaab9$var$webRTCAdapter.browserDetails.version || 0;
+  }
+  isUnifiedPlanSupported() {
+    const browser = this.getBrowser();
+    const version = $fb63e766cfafaab9$var$webRTCAdapter.browserDetails.version || 0;
+    if (browser === "chrome" && version < this.minChromeVersion) return false;
+    if (browser === "firefox" && version >= this.minFirefoxVersion) return true;
+    if (!window.RTCRtpTransceiver || !("currentDirection" in RTCRtpTransceiver.prototype)) return false;
+    let tempPc;
+    let supported = false;
+    try {
+      tempPc = new RTCPeerConnection();
+      tempPc.addTransceiver("audio");
+      supported = true;
+    } catch (e) {
+    } finally {
+      if (tempPc) tempPc.close();
+    }
+    return supported;
+  }
+  toString() {
+    return `Supports:
+    browser:${this.getBrowser()}
+    version:${this.getVersion()}
+    isIOS:${this.isIOS}
+    isWebRTCSupported:${this.isWebRTCSupported()}
+    isBrowserSupported:${this.isBrowserSupported()}
+    isUnifiedPlanSupported:${this.isUnifiedPlanSupported()}`;
+  }
+  constructor() {
+    this.isIOS = typeof navigator !== "undefined" ? [
+      "iPad",
+      "iPhone",
+      "iPod"
+    ].includes(navigator.platform) : false;
+    this.supportedBrowsers = [
+      "firefox",
+      "chrome",
+      "safari"
+    ];
+    this.minFirefoxVersion = 59;
+    this.minChromeVersion = 72;
+    this.minSafariVersion = 605;
+  }
+}();
+var $9a84a32bf0bf36bb$export$f35f128fd59ea256 = (id) => {
+  return !id || /^[A-Za-z0-9]+(?:[ _-][A-Za-z0-9]+)*$/.test(id);
+};
+var $0e5fd1585784c252$export$4e61f672936bec77 = () => Math.random().toString(36).slice(2);
+var $4f4134156c446392$var$DEFAULT_CONFIG = {
+  iceServers: [
+    {
+      urls: "stun:stun.l.google.com:19302"
+    },
+    {
+      urls: [
+        "turn:eu-0.turn.peerjs.com:3478",
+        "turn:us-0.turn.peerjs.com:3478"
+      ],
+      username: "peerjs",
+      credential: "peerjsp"
+    }
+  ],
+  sdpSemantics: "unified-plan"
+};
+var $4f4134156c446392$export$f8f26dd395d7e1bd = class extends (0, $fcbcc7538a6776d5$export$f1c5f4c9cb95390b) {
+  noop() {
+  }
+  blobToArrayBuffer(blob, cb) {
+    const fr = new FileReader();
+    fr.onload = function(evt) {
+      if (evt.target) cb(evt.target.result);
+    };
+    fr.readAsArrayBuffer(blob);
+    return fr;
+  }
+  binaryStringToArrayBuffer(binary) {
+    const byteArray = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) byteArray[i] = binary.charCodeAt(i) & 255;
+    return byteArray.buffer;
+  }
+  isSecure() {
+    return location.protocol === "https:";
+  }
+  constructor(...args) {
+    super(...args), this.CLOUD_HOST = "0.peerjs.com", this.CLOUD_PORT = 443, // Browsers that need chunking:
+    this.chunkedBrowsers = {
+      Chrome: 1,
+      chrome: 1
+    }, // Returns browser-agnostic default config
+    this.defaultConfig = $4f4134156c446392$var$DEFAULT_CONFIG, this.browser = (0, $fb63e766cfafaab9$export$25be9502477c137d).getBrowser(), this.browserVersion = (0, $fb63e766cfafaab9$export$25be9502477c137d).getVersion(), this.pack = $0cfd7828ad59115f$export$2a703dbb0cb35339, this.unpack = $0cfd7828ad59115f$export$417857010dc9287f, /**
+    * A hash of WebRTC features mapped to booleans that correspond to whether the feature is supported by the current browser.
+    *
+    * :::caution
+    * Only the properties documented here are guaranteed to be present on `util.supports`
+    * :::
+    */
+    this.supports = (function() {
+      const supported = {
+        browser: (0, $fb63e766cfafaab9$export$25be9502477c137d).isBrowserSupported(),
+        webRTC: (0, $fb63e766cfafaab9$export$25be9502477c137d).isWebRTCSupported(),
+        audioVideo: false,
+        data: false,
+        binaryBlob: false,
+        reliable: false
+      };
+      if (!supported.webRTC) return supported;
+      let pc;
+      try {
+        pc = new RTCPeerConnection($4f4134156c446392$var$DEFAULT_CONFIG);
+        supported.audioVideo = true;
+        let dc;
+        try {
+          dc = pc.createDataChannel("_PEERJSTEST", {
+            ordered: true
+          });
+          supported.data = true;
+          supported.reliable = !!dc.ordered;
+          try {
+            dc.binaryType = "blob";
+            supported.binaryBlob = !(0, $fb63e766cfafaab9$export$25be9502477c137d).isIOS;
+          } catch (e) {
+          }
+        } catch (e) {
+        } finally {
+          if (dc) dc.close();
+        }
+      } catch (e) {
+      } finally {
+        if (pc) pc.close();
+      }
+      return supported;
+    })(), // Ensure alphanumeric ids
+    this.validateId = (0, $9a84a32bf0bf36bb$export$f35f128fd59ea256), this.randomToken = (0, $0e5fd1585784c252$export$4e61f672936bec77);
+  }
+};
+var $4f4134156c446392$export$7debb50ef11d5e0b = new $4f4134156c446392$export$f8f26dd395d7e1bd();
+var $257947e92926277a$var$LOG_PREFIX = "PeerJS: ";
+var $257947e92926277a$var$Logger = class {
+  get logLevel() {
+    return this._logLevel;
+  }
+  set logLevel(logLevel) {
+    this._logLevel = logLevel;
+  }
+  log(...args) {
+    if (this._logLevel >= 3) this._print(3, ...args);
+  }
+  warn(...args) {
+    if (this._logLevel >= 2) this._print(2, ...args);
+  }
+  error(...args) {
+    if (this._logLevel >= 1) this._print(1, ...args);
+  }
+  setLogFunction(fn) {
+    this._print = fn;
+  }
+  _print(logLevel, ...rest) {
+    const copy = [
+      $257947e92926277a$var$LOG_PREFIX,
+      ...rest
+    ];
+    for (const i in copy) if (copy[i] instanceof Error) copy[i] = "(" + copy[i].name + ") " + copy[i].message;
+    if (logLevel >= 3) console.log(...copy);
+    else if (logLevel >= 2) console.warn("WARNING", ...copy);
+    else if (logLevel >= 1) console.error("ERROR", ...copy);
+  }
+  constructor() {
+    this._logLevel = 0;
+  }
+};
+var $257947e92926277a$export$2e2bcd8739ae039 = new $257947e92926277a$var$Logger();
+var $c4dcfd1d1ea86647$exports = {};
+var $c4dcfd1d1ea86647$var$has = Object.prototype.hasOwnProperty;
+var $c4dcfd1d1ea86647$var$prefix = "~";
+function $c4dcfd1d1ea86647$var$Events() {
+}
+if (Object.create) {
+  $c4dcfd1d1ea86647$var$Events.prototype = /* @__PURE__ */ Object.create(null);
+  if (!new $c4dcfd1d1ea86647$var$Events().__proto__) $c4dcfd1d1ea86647$var$prefix = false;
+}
+function $c4dcfd1d1ea86647$var$EE(fn, context, once2) {
+  this.fn = fn;
+  this.context = context;
+  this.once = once2 || false;
+}
+function $c4dcfd1d1ea86647$var$addListener(emitter, event, fn, context, once2) {
+  if (typeof fn !== "function") throw new TypeError("The listener must be a function");
+  var listener = new $c4dcfd1d1ea86647$var$EE(fn, context || emitter, once2), evt = $c4dcfd1d1ea86647$var$prefix ? $c4dcfd1d1ea86647$var$prefix + event : event;
+  if (!emitter._events[evt]) emitter._events[evt] = listener, emitter._eventsCount++;
+  else if (!emitter._events[evt].fn) emitter._events[evt].push(listener);
+  else emitter._events[evt] = [
+    emitter._events[evt],
+    listener
+  ];
+  return emitter;
+}
+function $c4dcfd1d1ea86647$var$clearEvent(emitter, evt) {
+  if (--emitter._eventsCount === 0) emitter._events = new $c4dcfd1d1ea86647$var$Events();
+  else delete emitter._events[evt];
+}
+function $c4dcfd1d1ea86647$var$EventEmitter() {
+  this._events = new $c4dcfd1d1ea86647$var$Events();
+  this._eventsCount = 0;
+}
+$c4dcfd1d1ea86647$var$EventEmitter.prototype.eventNames = function eventNames() {
+  var names = [], events, name;
+  if (this._eventsCount === 0) return names;
+  for (name in events = this._events) if ($c4dcfd1d1ea86647$var$has.call(events, name)) names.push($c4dcfd1d1ea86647$var$prefix ? name.slice(1) : name);
+  if (Object.getOwnPropertySymbols) return names.concat(Object.getOwnPropertySymbols(events));
+  return names;
+};
+$c4dcfd1d1ea86647$var$EventEmitter.prototype.listeners = function listeners(event) {
+  var evt = $c4dcfd1d1ea86647$var$prefix ? $c4dcfd1d1ea86647$var$prefix + event : event, handlers = this._events[evt];
+  if (!handlers) return [];
+  if (handlers.fn) return [
+    handlers.fn
+  ];
+  for (var i = 0, l = handlers.length, ee = new Array(l); i < l; i++) ee[i] = handlers[i].fn;
+  return ee;
+};
+$c4dcfd1d1ea86647$var$EventEmitter.prototype.listenerCount = function listenerCount(event) {
+  var evt = $c4dcfd1d1ea86647$var$prefix ? $c4dcfd1d1ea86647$var$prefix + event : event, listeners2 = this._events[evt];
+  if (!listeners2) return 0;
+  if (listeners2.fn) return 1;
+  return listeners2.length;
+};
+$c4dcfd1d1ea86647$var$EventEmitter.prototype.emit = function emit(event, a1, a2, a3, a4, a5) {
+  var evt = $c4dcfd1d1ea86647$var$prefix ? $c4dcfd1d1ea86647$var$prefix + event : event;
+  if (!this._events[evt]) return false;
+  var listeners2 = this._events[evt], len = arguments.length, args, i;
+  if (listeners2.fn) {
+    if (listeners2.once) this.removeListener(event, listeners2.fn, void 0, true);
+    switch (len) {
+      case 1:
+        return listeners2.fn.call(listeners2.context), true;
+      case 2:
+        return listeners2.fn.call(listeners2.context, a1), true;
+      case 3:
+        return listeners2.fn.call(listeners2.context, a1, a2), true;
+      case 4:
+        return listeners2.fn.call(listeners2.context, a1, a2, a3), true;
+      case 5:
+        return listeners2.fn.call(listeners2.context, a1, a2, a3, a4), true;
+      case 6:
+        return listeners2.fn.call(listeners2.context, a1, a2, a3, a4, a5), true;
+    }
+    for (i = 1, args = new Array(len - 1); i < len; i++) args[i - 1] = arguments[i];
+    listeners2.fn.apply(listeners2.context, args);
+  } else {
+    var length = listeners2.length, j;
+    for (i = 0; i < length; i++) {
+      if (listeners2[i].once) this.removeListener(event, listeners2[i].fn, void 0, true);
+      switch (len) {
+        case 1:
+          listeners2[i].fn.call(listeners2[i].context);
+          break;
+        case 2:
+          listeners2[i].fn.call(listeners2[i].context, a1);
+          break;
+        case 3:
+          listeners2[i].fn.call(listeners2[i].context, a1, a2);
+          break;
+        case 4:
+          listeners2[i].fn.call(listeners2[i].context, a1, a2, a3);
+          break;
+        default:
+          if (!args) for (j = 1, args = new Array(len - 1); j < len; j++) args[j - 1] = arguments[j];
+          listeners2[i].fn.apply(listeners2[i].context, args);
+      }
+    }
+  }
+  return true;
+};
+$c4dcfd1d1ea86647$var$EventEmitter.prototype.on = function on(event, fn, context) {
+  return $c4dcfd1d1ea86647$var$addListener(this, event, fn, context, false);
+};
+$c4dcfd1d1ea86647$var$EventEmitter.prototype.once = function once(event, fn, context) {
+  return $c4dcfd1d1ea86647$var$addListener(this, event, fn, context, true);
+};
+$c4dcfd1d1ea86647$var$EventEmitter.prototype.removeListener = function removeListener(event, fn, context, once2) {
+  var evt = $c4dcfd1d1ea86647$var$prefix ? $c4dcfd1d1ea86647$var$prefix + event : event;
+  if (!this._events[evt]) return this;
+  if (!fn) {
+    $c4dcfd1d1ea86647$var$clearEvent(this, evt);
+    return this;
+  }
+  var listeners2 = this._events[evt];
+  if (listeners2.fn) {
+    if (listeners2.fn === fn && (!once2 || listeners2.once) && (!context || listeners2.context === context)) $c4dcfd1d1ea86647$var$clearEvent(this, evt);
+  } else {
+    for (var i = 0, events = [], length = listeners2.length; i < length; i++) if (listeners2[i].fn !== fn || once2 && !listeners2[i].once || context && listeners2[i].context !== context) events.push(listeners2[i]);
+    if (events.length) this._events[evt] = events.length === 1 ? events[0] : events;
+    else $c4dcfd1d1ea86647$var$clearEvent(this, evt);
+  }
+  return this;
+};
+$c4dcfd1d1ea86647$var$EventEmitter.prototype.removeAllListeners = function removeAllListeners(event) {
+  var evt;
+  if (event) {
+    evt = $c4dcfd1d1ea86647$var$prefix ? $c4dcfd1d1ea86647$var$prefix + event : event;
+    if (this._events[evt]) $c4dcfd1d1ea86647$var$clearEvent(this, evt);
+  } else {
+    this._events = new $c4dcfd1d1ea86647$var$Events();
+    this._eventsCount = 0;
+  }
+  return this;
+};
+$c4dcfd1d1ea86647$var$EventEmitter.prototype.off = $c4dcfd1d1ea86647$var$EventEmitter.prototype.removeListener;
+$c4dcfd1d1ea86647$var$EventEmitter.prototype.addListener = $c4dcfd1d1ea86647$var$EventEmitter.prototype.on;
+$c4dcfd1d1ea86647$var$EventEmitter.prefixed = $c4dcfd1d1ea86647$var$prefix;
+$c4dcfd1d1ea86647$var$EventEmitter.EventEmitter = $c4dcfd1d1ea86647$var$EventEmitter;
+$c4dcfd1d1ea86647$exports = $c4dcfd1d1ea86647$var$EventEmitter;
+var $78455e22dea96b8c$exports = {};
+$parcel$export($78455e22dea96b8c$exports, "ConnectionType", () => $78455e22dea96b8c$export$3157d57b4135e3bc);
+$parcel$export($78455e22dea96b8c$exports, "PeerErrorType", () => $78455e22dea96b8c$export$9547aaa2e39030ff);
+$parcel$export($78455e22dea96b8c$exports, "BaseConnectionErrorType", () => $78455e22dea96b8c$export$7974935686149686);
+$parcel$export($78455e22dea96b8c$exports, "DataConnectionErrorType", () => $78455e22dea96b8c$export$49ae800c114df41d);
+$parcel$export($78455e22dea96b8c$exports, "SerializationType", () => $78455e22dea96b8c$export$89f507cf986a947);
+$parcel$export($78455e22dea96b8c$exports, "SocketEventType", () => $78455e22dea96b8c$export$3b5c4a4b6354f023);
+$parcel$export($78455e22dea96b8c$exports, "ServerMessageType", () => $78455e22dea96b8c$export$adb4a1754da6f10d);
+var $78455e22dea96b8c$export$3157d57b4135e3bc = /* @__PURE__ */ (function(ConnectionType) {
+  ConnectionType["Data"] = "data";
+  ConnectionType["Media"] = "media";
+  return ConnectionType;
+})({});
+var $78455e22dea96b8c$export$9547aaa2e39030ff = /* @__PURE__ */ (function(PeerErrorType) {
+  PeerErrorType["BrowserIncompatible"] = "browser-incompatible";
+  PeerErrorType["Disconnected"] = "disconnected";
+  PeerErrorType["InvalidID"] = "invalid-id";
+  PeerErrorType["InvalidKey"] = "invalid-key";
+  PeerErrorType["Network"] = "network";
+  PeerErrorType["PeerUnavailable"] = "peer-unavailable";
+  PeerErrorType["SslUnavailable"] = "ssl-unavailable";
+  PeerErrorType["ServerError"] = "server-error";
+  PeerErrorType["SocketError"] = "socket-error";
+  PeerErrorType["SocketClosed"] = "socket-closed";
+  PeerErrorType["UnavailableID"] = "unavailable-id";
+  PeerErrorType["WebRTC"] = "webrtc";
+  return PeerErrorType;
+})({});
+var $78455e22dea96b8c$export$7974935686149686 = /* @__PURE__ */ (function(BaseConnectionErrorType) {
+  BaseConnectionErrorType["NegotiationFailed"] = "negotiation-failed";
+  BaseConnectionErrorType["ConnectionClosed"] = "connection-closed";
+  return BaseConnectionErrorType;
+})({});
+var $78455e22dea96b8c$export$49ae800c114df41d = /* @__PURE__ */ (function(DataConnectionErrorType) {
+  DataConnectionErrorType["NotOpenYet"] = "not-open-yet";
+  DataConnectionErrorType["MessageToBig"] = "message-too-big";
+  return DataConnectionErrorType;
+})({});
+var $78455e22dea96b8c$export$89f507cf986a947 = /* @__PURE__ */ (function(SerializationType) {
+  SerializationType["Binary"] = "binary";
+  SerializationType["BinaryUTF8"] = "binary-utf8";
+  SerializationType["JSON"] = "json";
+  SerializationType["None"] = "raw";
+  return SerializationType;
+})({});
+var $78455e22dea96b8c$export$3b5c4a4b6354f023 = /* @__PURE__ */ (function(SocketEventType) {
+  SocketEventType["Message"] = "message";
+  SocketEventType["Disconnected"] = "disconnected";
+  SocketEventType["Error"] = "error";
+  SocketEventType["Close"] = "close";
+  return SocketEventType;
+})({});
+var $78455e22dea96b8c$export$adb4a1754da6f10d = /* @__PURE__ */ (function(ServerMessageType) {
+  ServerMessageType["Heartbeat"] = "HEARTBEAT";
+  ServerMessageType["Candidate"] = "CANDIDATE";
+  ServerMessageType["Offer"] = "OFFER";
+  ServerMessageType["Answer"] = "ANSWER";
+  ServerMessageType["Open"] = "OPEN";
+  ServerMessageType["Error"] = "ERROR";
+  ServerMessageType["IdTaken"] = "ID-TAKEN";
+  ServerMessageType["InvalidKey"] = "INVALID-KEY";
+  ServerMessageType["Leave"] = "LEAVE";
+  ServerMessageType["Expire"] = "EXPIRE";
+  return ServerMessageType;
+})({});
+var $520832d44ba058c8$export$83d89fbfd8236492 = "1.5.5";
+var $8f5bfa60836d261d$export$4798917dbf149b79 = class extends (0, $c4dcfd1d1ea86647$exports.EventEmitter) {
+  constructor(secure, host, port, path, key, pingInterval = 5e3) {
+    super(), this.pingInterval = pingInterval, this._disconnected = true, this._messagesQueue = [];
+    const wsProtocol = secure ? "wss://" : "ws://";
+    this._baseUrl = wsProtocol + host + ":" + port + path + "peerjs?key=" + key;
+  }
+  start(id, token) {
+    this._id = id;
+    const wsUrl = `${this._baseUrl}&id=${id}&token=${token}`;
+    if (!!this._socket || !this._disconnected) return;
+    this._socket = new WebSocket(wsUrl + "&version=" + (0, $520832d44ba058c8$export$83d89fbfd8236492));
+    this._disconnected = false;
+    this._socket.onmessage = (event) => {
+      let data;
+      try {
+        data = JSON.parse(event.data);
+        (0, $257947e92926277a$export$2e2bcd8739ae039).log("Server message received:", data);
+      } catch (e) {
+        (0, $257947e92926277a$export$2e2bcd8739ae039).log("Invalid server message", event.data);
+        return;
+      }
+      this.emit((0, $78455e22dea96b8c$export$3b5c4a4b6354f023).Message, data);
+    };
+    this._socket.onclose = (event) => {
+      if (this._disconnected) return;
+      (0, $257947e92926277a$export$2e2bcd8739ae039).log("Socket closed.", event);
+      this._cleanup();
+      this._disconnected = true;
+      this.emit((0, $78455e22dea96b8c$export$3b5c4a4b6354f023).Disconnected);
+    };
+    this._socket.onopen = () => {
+      if (this._disconnected) return;
+      this._sendQueuedMessages();
+      (0, $257947e92926277a$export$2e2bcd8739ae039).log("Socket open");
+      this._scheduleHeartbeat();
+    };
+  }
+  _scheduleHeartbeat() {
+    this._wsPingTimer = setTimeout(() => {
+      this._sendHeartbeat();
+    }, this.pingInterval);
+  }
+  _sendHeartbeat() {
+    if (!this._wsOpen()) {
+      (0, $257947e92926277a$export$2e2bcd8739ae039).log(`Cannot send heartbeat, because socket closed`);
+      return;
+    }
+    const message = JSON.stringify({
+      type: (0, $78455e22dea96b8c$export$adb4a1754da6f10d).Heartbeat
+    });
+    this._socket.send(message);
+    this._scheduleHeartbeat();
+  }
+  /** Is the websocket currently open? */
+  _wsOpen() {
+    return !!this._socket && this._socket.readyState === 1;
+  }
+  /** Send queued messages. */
+  _sendQueuedMessages() {
+    const copiedQueue = [
+      ...this._messagesQueue
+    ];
+    this._messagesQueue = [];
+    for (const message of copiedQueue) this.send(message);
+  }
+  /** Exposed send for DC & Peer. */
+  send(data) {
+    if (this._disconnected) return;
+    if (!this._id) {
+      this._messagesQueue.push(data);
+      return;
+    }
+    if (!data.type) {
+      this.emit((0, $78455e22dea96b8c$export$3b5c4a4b6354f023).Error, "Invalid message");
+      return;
+    }
+    if (!this._wsOpen()) return;
+    const message = JSON.stringify(data);
+    this._socket.send(message);
+  }
+  close() {
+    if (this._disconnected) return;
+    this._cleanup();
+    this._disconnected = true;
+  }
+  _cleanup() {
+    if (this._socket) {
+      this._socket.onopen = this._socket.onmessage = this._socket.onclose = null;
+      this._socket.close();
+      this._socket = void 0;
+    }
+    clearTimeout(this._wsPingTimer);
+  }
+};
+var $b82fb8fc0514bfc1$export$89e6bb5ad64bf4a = class {
+  constructor(connection2) {
+    this.connection = connection2;
+  }
+  /** Returns a PeerConnection object set up correctly (for data, media). */
+  startConnection(options) {
+    const peerConnection = this._startPeerConnection();
+    this.connection.peerConnection = peerConnection;
+    if (this.connection.type === (0, $78455e22dea96b8c$export$3157d57b4135e3bc).Media && options._stream) this._addTracksToConnection(options._stream, peerConnection);
+    if (options.originator) {
+      const dataConnection = this.connection;
+      const config = {
+        ordered: !!options.reliable
+      };
+      const dataChannel = peerConnection.createDataChannel(dataConnection.label, config);
+      dataConnection._initializeDataChannel(dataChannel);
+      this._makeOffer();
+    } else this.handleSDP("OFFER", options.sdp);
+  }
+  /** Start a PC. */
+  _startPeerConnection() {
+    (0, $257947e92926277a$export$2e2bcd8739ae039).log("Creating RTCPeerConnection.");
+    const peerConnection = new RTCPeerConnection(this.connection.provider.options.config);
+    this._setupListeners(peerConnection);
+    return peerConnection;
+  }
+  /** Set up various WebRTC listeners. */
+  _setupListeners(peerConnection) {
+    const peerId = this.connection.peer;
+    const connectionId = this.connection.connectionId;
+    const connectionType = this.connection.type;
+    const provider = this.connection.provider;
+    (0, $257947e92926277a$export$2e2bcd8739ae039).log("Listening for ICE candidates.");
+    peerConnection.onicecandidate = (evt) => {
+      if (!evt.candidate || !evt.candidate.candidate) return;
+      (0, $257947e92926277a$export$2e2bcd8739ae039).log(`Received ICE candidates for ${peerId}:`, evt.candidate);
+      provider.socket.send({
+        type: (0, $78455e22dea96b8c$export$adb4a1754da6f10d).Candidate,
+        payload: {
+          candidate: evt.candidate,
+          type: connectionType,
+          connectionId
+        },
+        dst: peerId
+      });
+    };
+    peerConnection.oniceconnectionstatechange = () => {
+      switch (peerConnection.iceConnectionState) {
+        case "failed":
+          (0, $257947e92926277a$export$2e2bcd8739ae039).log("iceConnectionState is failed, closing connections to " + peerId);
+          this.connection.emitError((0, $78455e22dea96b8c$export$7974935686149686).NegotiationFailed, "Negotiation of connection to " + peerId + " failed.");
+          this.connection.close();
+          break;
+        case "closed":
+          (0, $257947e92926277a$export$2e2bcd8739ae039).log("iceConnectionState is closed, closing connections to " + peerId);
+          this.connection.emitError((0, $78455e22dea96b8c$export$7974935686149686).ConnectionClosed, "Connection to " + peerId + " closed.");
+          this.connection.close();
+          break;
+        case "disconnected":
+          (0, $257947e92926277a$export$2e2bcd8739ae039).log("iceConnectionState changed to disconnected on the connection with " + peerId);
+          break;
+        case "completed":
+          peerConnection.onicecandidate = () => {
+          };
+          break;
+      }
+      this.connection.emit("iceStateChanged", peerConnection.iceConnectionState);
+    };
+    (0, $257947e92926277a$export$2e2bcd8739ae039).log("Listening for data channel");
+    peerConnection.ondatachannel = (evt) => {
+      (0, $257947e92926277a$export$2e2bcd8739ae039).log("Received data channel");
+      const dataChannel = evt.channel;
+      const connection2 = provider.getConnection(peerId, connectionId);
+      connection2._initializeDataChannel(dataChannel);
+    };
+    (0, $257947e92926277a$export$2e2bcd8739ae039).log("Listening for remote stream");
+    peerConnection.ontrack = (evt) => {
+      (0, $257947e92926277a$export$2e2bcd8739ae039).log("Received remote stream");
+      const stream = evt.streams[0];
+      const connection2 = provider.getConnection(peerId, connectionId);
+      if (connection2.type === (0, $78455e22dea96b8c$export$3157d57b4135e3bc).Media) {
+        const mediaConnection = connection2;
+        this._addStreamToMediaConnection(stream, mediaConnection);
+      }
+    };
+  }
+  cleanup() {
+    (0, $257947e92926277a$export$2e2bcd8739ae039).log("Cleaning up PeerConnection to " + this.connection.peer);
+    const peerConnection = this.connection.peerConnection;
+    if (!peerConnection) return;
+    this.connection.peerConnection = null;
+    peerConnection.onicecandidate = peerConnection.oniceconnectionstatechange = peerConnection.ondatachannel = peerConnection.ontrack = () => {
+    };
+    const peerConnectionNotClosed = peerConnection.signalingState !== "closed";
+    let dataChannelNotClosed = false;
+    const dataChannel = this.connection.dataChannel;
+    if (dataChannel) dataChannelNotClosed = !!dataChannel.readyState && dataChannel.readyState !== "closed";
+    if (peerConnectionNotClosed || dataChannelNotClosed) peerConnection.close();
+  }
+  async _makeOffer() {
+    const peerConnection = this.connection.peerConnection;
+    const provider = this.connection.provider;
+    try {
+      const offer = await peerConnection.createOffer(this.connection.options.constraints);
+      (0, $257947e92926277a$export$2e2bcd8739ae039).log("Created offer.");
+      if (this.connection.options.sdpTransform && typeof this.connection.options.sdpTransform === "function") offer.sdp = this.connection.options.sdpTransform(offer.sdp) || offer.sdp;
+      try {
+        await peerConnection.setLocalDescription(offer);
+        (0, $257947e92926277a$export$2e2bcd8739ae039).log("Set localDescription:", offer, `for:${this.connection.peer}`);
+        let payload = {
+          sdp: offer,
+          type: this.connection.type,
+          connectionId: this.connection.connectionId,
+          metadata: this.connection.metadata
+        };
+        if (this.connection.type === (0, $78455e22dea96b8c$export$3157d57b4135e3bc).Data) {
+          const dataConnection = this.connection;
+          payload = {
+            ...payload,
+            label: dataConnection.label,
+            reliable: dataConnection.reliable,
+            serialization: dataConnection.serialization
+          };
+        }
+        provider.socket.send({
+          type: (0, $78455e22dea96b8c$export$adb4a1754da6f10d).Offer,
+          payload,
+          dst: this.connection.peer
+        });
+      } catch (err) {
+        if (err != "OperationError: Failed to set local offer sdp: Called in wrong state: kHaveRemoteOffer") {
+          provider.emitError((0, $78455e22dea96b8c$export$9547aaa2e39030ff).WebRTC, err);
+          (0, $257947e92926277a$export$2e2bcd8739ae039).log("Failed to setLocalDescription, ", err);
+        }
+      }
+    } catch (err_1) {
+      provider.emitError((0, $78455e22dea96b8c$export$9547aaa2e39030ff).WebRTC, err_1);
+      (0, $257947e92926277a$export$2e2bcd8739ae039).log("Failed to createOffer, ", err_1);
+    }
+  }
+  async _makeAnswer() {
+    const peerConnection = this.connection.peerConnection;
+    const provider = this.connection.provider;
+    try {
+      const answer = await peerConnection.createAnswer();
+      (0, $257947e92926277a$export$2e2bcd8739ae039).log("Created answer.");
+      if (this.connection.options.sdpTransform && typeof this.connection.options.sdpTransform === "function") answer.sdp = this.connection.options.sdpTransform(answer.sdp) || answer.sdp;
+      try {
+        await peerConnection.setLocalDescription(answer);
+        (0, $257947e92926277a$export$2e2bcd8739ae039).log(`Set localDescription:`, answer, `for:${this.connection.peer}`);
+        provider.socket.send({
+          type: (0, $78455e22dea96b8c$export$adb4a1754da6f10d).Answer,
+          payload: {
+            sdp: answer,
+            type: this.connection.type,
+            connectionId: this.connection.connectionId
+          },
+          dst: this.connection.peer
+        });
+      } catch (err) {
+        provider.emitError((0, $78455e22dea96b8c$export$9547aaa2e39030ff).WebRTC, err);
+        (0, $257947e92926277a$export$2e2bcd8739ae039).log("Failed to setLocalDescription, ", err);
+      }
+    } catch (err_1) {
+      provider.emitError((0, $78455e22dea96b8c$export$9547aaa2e39030ff).WebRTC, err_1);
+      (0, $257947e92926277a$export$2e2bcd8739ae039).log("Failed to create answer, ", err_1);
+    }
+  }
+  /** Handle an SDP. */
+  async handleSDP(type, sdp2) {
+    sdp2 = new RTCSessionDescription(sdp2);
+    const peerConnection = this.connection.peerConnection;
+    const provider = this.connection.provider;
+    (0, $257947e92926277a$export$2e2bcd8739ae039).log("Setting remote description", sdp2);
+    const self = this;
+    try {
+      await peerConnection.setRemoteDescription(sdp2);
+      (0, $257947e92926277a$export$2e2bcd8739ae039).log(`Set remoteDescription:${type} for:${this.connection.peer}`);
+      if (type === "OFFER") await self._makeAnswer();
+    } catch (err) {
+      provider.emitError((0, $78455e22dea96b8c$export$9547aaa2e39030ff).WebRTC, err);
+      (0, $257947e92926277a$export$2e2bcd8739ae039).log("Failed to setRemoteDescription, ", err);
+    }
+  }
+  /** Handle a candidate. */
+  async handleCandidate(ice) {
+    (0, $257947e92926277a$export$2e2bcd8739ae039).log(`handleCandidate:`, ice);
+    try {
+      await this.connection.peerConnection.addIceCandidate(ice);
+      (0, $257947e92926277a$export$2e2bcd8739ae039).log(`Added ICE candidate for:${this.connection.peer}`);
+    } catch (err) {
+      this.connection.provider.emitError((0, $78455e22dea96b8c$export$9547aaa2e39030ff).WebRTC, err);
+      (0, $257947e92926277a$export$2e2bcd8739ae039).log("Failed to handleCandidate, ", err);
+    }
+  }
+  _addTracksToConnection(stream, peerConnection) {
+    (0, $257947e92926277a$export$2e2bcd8739ae039).log(`add tracks from stream ${stream.id} to peer connection`);
+    if (!peerConnection.addTrack) return (0, $257947e92926277a$export$2e2bcd8739ae039).error(`Your browser does't support RTCPeerConnection#addTrack. Ignored.`);
+    stream.getTracks().forEach((track) => {
+      peerConnection.addTrack(track, stream);
+    });
+  }
+  _addStreamToMediaConnection(stream, mediaConnection) {
+    (0, $257947e92926277a$export$2e2bcd8739ae039).log(`add stream ${stream.id} to media connection ${mediaConnection.connectionId}`);
+    mediaConnection.addStream(stream);
+  }
+};
+var $23779d1881157a18$export$6a678e589c8a4542 = class extends (0, $c4dcfd1d1ea86647$exports.EventEmitter) {
+  /**
+  * Emits a typed error message.
+  *
+  * @internal
+  */
+  emitError(type, err) {
+    (0, $257947e92926277a$export$2e2bcd8739ae039).error("Error:", err);
+    this.emit("error", new $23779d1881157a18$export$98871882f492de82(`${type}`, err));
+  }
+};
+var $23779d1881157a18$export$98871882f492de82 = class extends Error {
+  /**
+  * @internal
+  */
+  constructor(type, err) {
+    if (typeof err === "string") super(err);
+    else {
+      super();
+      Object.assign(this, err);
+    }
+    this.type = type;
+  }
+};
+var $5045192fc6d387ba$export$23a2a68283c24d80 = class extends (0, $23779d1881157a18$export$6a678e589c8a4542) {
+  /**
+  * Whether the media connection is active (e.g. your call has been answered).
+  * You can check this if you want to set a maximum wait time for a one-sided call.
+  */
+  get open() {
+    return this._open;
+  }
+  constructor(peer, provider, options) {
+    super(), this.peer = peer, this.provider = provider, this.options = options, this._open = false;
+    this.metadata = options.metadata;
+  }
+};
+var $5c1d08c7c57da9a3$export$4a84e95a2324ac29 = class _$5c1d08c7c57da9a3$export$4a84e95a2324ac29 extends (0, $5045192fc6d387ba$export$23a2a68283c24d80) {
+  static #_ = this.ID_PREFIX = "mc_";
+  /**
+  * For media connections, this is always 'media'.
+  */
+  get type() {
+    return (0, $78455e22dea96b8c$export$3157d57b4135e3bc).Media;
+  }
+  get localStream() {
+    return this._localStream;
+  }
+  get remoteStream() {
+    return this._remoteStream;
+  }
+  constructor(peerId, provider, options) {
+    super(peerId, provider, options);
+    this._localStream = this.options._stream;
+    this.connectionId = this.options.connectionId || _$5c1d08c7c57da9a3$export$4a84e95a2324ac29.ID_PREFIX + (0, $4f4134156c446392$export$7debb50ef11d5e0b).randomToken();
+    this._negotiator = new (0, $b82fb8fc0514bfc1$export$89e6bb5ad64bf4a)(this);
+    if (this._localStream) this._negotiator.startConnection({
+      _stream: this._localStream,
+      originator: true
+    });
+  }
+  /** Called by the Negotiator when the DataChannel is ready. */
+  _initializeDataChannel(dc) {
+    this.dataChannel = dc;
+    this.dataChannel.onopen = () => {
+      (0, $257947e92926277a$export$2e2bcd8739ae039).log(`DC#${this.connectionId} dc connection success`);
+      this.emit("willCloseOnRemote");
+    };
+    this.dataChannel.onclose = () => {
+      (0, $257947e92926277a$export$2e2bcd8739ae039).log(`DC#${this.connectionId} dc closed for:`, this.peer);
+      this.close();
+    };
+  }
+  addStream(remoteStream) {
+    (0, $257947e92926277a$export$2e2bcd8739ae039).log("Receiving stream", remoteStream);
+    this._remoteStream = remoteStream;
+    super.emit("stream", remoteStream);
+  }
+  /**
+  * @internal
+  */
+  handleMessage(message) {
+    const type = message.type;
+    const payload = message.payload;
+    switch (message.type) {
+      case (0, $78455e22dea96b8c$export$adb4a1754da6f10d).Answer:
+        this._negotiator.handleSDP(type, payload.sdp);
+        this._open = true;
+        break;
+      case (0, $78455e22dea96b8c$export$adb4a1754da6f10d).Candidate:
+        this._negotiator.handleCandidate(payload.candidate);
+        break;
+      default:
+        (0, $257947e92926277a$export$2e2bcd8739ae039).warn(`Unrecognized message type:${type} from peer:${this.peer}`);
+        break;
+    }
+  }
+  /**
+       * When receiving a {@apilink PeerEvents | `call`} event on a peer, you can call
+       * `answer` on the media connection provided by the callback to accept the call
+       * and optionally send your own media stream.
+  
+       *
+       * @param stream A WebRTC media stream.
+       * @param options
+       * @returns
+       */
+  answer(stream, options = {}) {
+    if (this._localStream) {
+      (0, $257947e92926277a$export$2e2bcd8739ae039).warn("Local stream already exists on this MediaConnection. Are you answering a call twice?");
+      return;
+    }
+    this._localStream = stream;
+    if (options && options.sdpTransform) this.options.sdpTransform = options.sdpTransform;
+    this._negotiator.startConnection({
+      ...this.options._payload,
+      _stream: stream
+    });
+    const messages = this.provider._getMessages(this.connectionId);
+    for (const message of messages) this.handleMessage(message);
+    this._open = true;
+  }
+  /**
+  * Exposed functionality for users.
+  */
+  /**
+  * Closes the media connection.
+  */
+  close() {
+    if (this._negotiator) {
+      this._negotiator.cleanup();
+      this._negotiator = null;
+    }
+    this._localStream = null;
+    this._remoteStream = null;
+    if (this.provider) {
+      this.provider._removeConnection(this);
+      this.provider = null;
+    }
+    if (this.options && this.options._stream) this.options._stream = null;
+    if (!this.open) return;
+    this._open = false;
+    super.emit("close");
+  }
+};
+var $abf266641927cd89$export$2c4e825dc9120f87 = class {
+  constructor(_options) {
+    this._options = _options;
+  }
+  _buildRequest(method) {
+    const protocol = this._options.secure ? "https" : "http";
+    const { host, port, path, key } = this._options;
+    const url = new URL(`${protocol}://${host}:${port}${path}${key}/${method}`);
+    url.searchParams.set("ts", `${Date.now()}${Math.random()}`);
+    url.searchParams.set("version", (0, $520832d44ba058c8$export$83d89fbfd8236492));
+    return fetch(url.href, {
+      referrerPolicy: this._options.referrerPolicy
+    });
+  }
+  /** Get a unique ID from the server via XHR and initialize with it. */
+  async retrieveId() {
+    try {
+      const response = await this._buildRequest("id");
+      if (response.status !== 200) throw new Error(`Error. Status:${response.status}`);
+      return response.text();
+    } catch (error) {
+      (0, $257947e92926277a$export$2e2bcd8739ae039).error("Error retrieving ID", error);
+      let pathError = "";
+      if (this._options.path === "/" && this._options.host !== (0, $4f4134156c446392$export$7debb50ef11d5e0b).CLOUD_HOST) pathError = " If you passed in a `path` to your self-hosted PeerServer, you'll also need to pass in that same path when creating a new Peer.";
+      throw new Error("Could not get an ID from the server." + pathError);
+    }
+  }
+  /** @deprecated */
+  async listAllPeers() {
+    try {
+      const response = await this._buildRequest("peers");
+      if (response.status !== 200) {
+        if (response.status === 401) {
+          let helpfulError = "";
+          if (this._options.host === (0, $4f4134156c446392$export$7debb50ef11d5e0b).CLOUD_HOST) helpfulError = "It looks like you're using the cloud server. You can email team@peerjs.com to enable peer listing for your API key.";
+          else helpfulError = "You need to enable `allow_discovery` on your self-hosted PeerServer to use this feature.";
+          throw new Error("It doesn't look like you have permission to list peers IDs. " + helpfulError);
+        }
+        throw new Error(`Error. Status:${response.status}`);
+      }
+      return response.json();
+    } catch (error) {
+      (0, $257947e92926277a$export$2e2bcd8739ae039).error("Error retrieving list peers", error);
+      throw new Error("Could not get list peers from the server." + error);
+    }
+  }
+};
+var $6366c4ca161bc297$export$d365f7ad9d7df9c9 = class _$6366c4ca161bc297$export$d365f7ad9d7df9c9 extends (0, $5045192fc6d387ba$export$23a2a68283c24d80) {
+  static #_ = this.ID_PREFIX = "dc_";
+  static #_2 = this.MAX_BUFFERED_AMOUNT = 8388608;
+  get type() {
+    return (0, $78455e22dea96b8c$export$3157d57b4135e3bc).Data;
+  }
+  constructor(peerId, provider, options) {
+    super(peerId, provider, options);
+    this.connectionId = this.options.connectionId || _$6366c4ca161bc297$export$d365f7ad9d7df9c9.ID_PREFIX + (0, $0e5fd1585784c252$export$4e61f672936bec77)();
+    this.label = this.options.label || this.connectionId;
+    this.reliable = !!this.options.reliable;
+    this._negotiator = new (0, $b82fb8fc0514bfc1$export$89e6bb5ad64bf4a)(this);
+    this._negotiator.startConnection(this.options._payload || {
+      originator: true,
+      reliable: this.reliable
+    });
+  }
+  /** Called by the Negotiator when the DataChannel is ready. */
+  _initializeDataChannel(dc) {
+    this.dataChannel = dc;
+    this.dataChannel.onopen = () => {
+      (0, $257947e92926277a$export$2e2bcd8739ae039).log(`DC#${this.connectionId} dc connection success`);
+      this._open = true;
+      this.emit("open");
+    };
+    this.dataChannel.onmessage = (e) => {
+      (0, $257947e92926277a$export$2e2bcd8739ae039).log(`DC#${this.connectionId} dc onmessage:`, e.data);
+    };
+    this.dataChannel.onclose = () => {
+      (0, $257947e92926277a$export$2e2bcd8739ae039).log(`DC#${this.connectionId} dc closed for:`, this.peer);
+      this.close();
+    };
+  }
+  /**
+  * Exposed functionality for users.
+  */
+  /** Allows user to close connection. */
+  close(options) {
+    if (options?.flush) {
+      this.send({
+        __peerData: {
+          type: "close"
+        }
+      });
+      return;
+    }
+    if (this._negotiator) {
+      this._negotiator.cleanup();
+      this._negotiator = null;
+    }
+    if (this.provider) {
+      this.provider._removeConnection(this);
+      this.provider = null;
+    }
+    if (this.dataChannel) {
+      this.dataChannel.onopen = null;
+      this.dataChannel.onmessage = null;
+      this.dataChannel.onclose = null;
+      this.dataChannel = null;
+    }
+    if (!this.open) return;
+    this._open = false;
+    super.emit("close");
+  }
+  /** Allows user to send data. */
+  send(data, chunked = false) {
+    if (!this.open) {
+      this.emitError((0, $78455e22dea96b8c$export$49ae800c114df41d).NotOpenYet, "Connection is not open. You should listen for the `open` event before sending messages.");
+      return;
+    }
+    return this._send(data, chunked);
+  }
+  async handleMessage(message) {
+    const payload = message.payload;
+    switch (message.type) {
+      case (0, $78455e22dea96b8c$export$adb4a1754da6f10d).Answer:
+        await this._negotiator.handleSDP(message.type, payload.sdp);
+        break;
+      case (0, $78455e22dea96b8c$export$adb4a1754da6f10d).Candidate:
+        await this._negotiator.handleCandidate(payload.candidate);
+        break;
+      default:
+        (0, $257947e92926277a$export$2e2bcd8739ae039).warn("Unrecognized message type:", message.type, "from peer:", this.peer);
+        break;
+    }
+  }
+};
+var $a229bedbcaa6ca23$export$ff7c9d4c11d94e8b = class extends (0, $6366c4ca161bc297$export$d365f7ad9d7df9c9) {
+  get bufferSize() {
+    return this._bufferSize;
+  }
+  _initializeDataChannel(dc) {
+    super._initializeDataChannel(dc);
+    this.dataChannel.binaryType = "arraybuffer";
+    this.dataChannel.addEventListener("message", (e) => this._handleDataMessage(e));
+  }
+  _bufferedSend(msg) {
+    if (this._buffering || !this._trySend(msg)) {
+      this._buffer.push(msg);
+      this._bufferSize = this._buffer.length;
+    }
+  }
+  // Returns true if the send succeeds.
+  _trySend(msg) {
+    if (!this.open) return false;
+    if (this.dataChannel.bufferedAmount > (0, $6366c4ca161bc297$export$d365f7ad9d7df9c9).MAX_BUFFERED_AMOUNT) {
+      this._buffering = true;
+      setTimeout(() => {
+        this._buffering = false;
+        this._tryBuffer();
+      }, 50);
+      return false;
+    }
+    try {
+      this.dataChannel.send(msg);
+    } catch (e) {
+      (0, $257947e92926277a$export$2e2bcd8739ae039).error(`DC#:${this.connectionId} Error when sending:`, e);
+      this._buffering = true;
+      this.close();
+      return false;
+    }
+    return true;
+  }
+  // Try to send the first message in the buffer.
+  _tryBuffer() {
+    if (!this.open) return;
+    if (this._buffer.length === 0) return;
+    const msg = this._buffer[0];
+    if (this._trySend(msg)) {
+      this._buffer.shift();
+      this._bufferSize = this._buffer.length;
+      this._tryBuffer();
+    }
+  }
+  close(options) {
+    if (options?.flush) {
+      this.send({
+        __peerData: {
+          type: "close"
+        }
+      });
+      return;
+    }
+    this._buffer = [];
+    this._bufferSize = 0;
+    super.close();
+  }
+  constructor(...args) {
+    super(...args), this._buffer = [], this._bufferSize = 0, this._buffering = false;
+  }
+};
+var $9fcfddb3ae148f88$export$f0a5a64d5bb37108 = class extends (0, $a229bedbcaa6ca23$export$ff7c9d4c11d94e8b) {
+  close(options) {
+    super.close(options);
+    this._chunkedData = {};
+  }
+  constructor(peerId, provider, options) {
+    super(peerId, provider, options), this.chunker = new (0, $fcbcc7538a6776d5$export$f1c5f4c9cb95390b)(), this.serialization = (0, $78455e22dea96b8c$export$89f507cf986a947).Binary, this._chunkedData = {};
+  }
+  // Handles a DataChannel message.
+  _handleDataMessage({ data }) {
+    const deserializedData = (0, $0cfd7828ad59115f$export$417857010dc9287f)(data);
+    const peerData = deserializedData["__peerData"];
+    if (peerData) {
+      if (peerData.type === "close") {
+        this.close();
+        return;
+      }
+      this._handleChunk(deserializedData);
+      return;
+    }
+    this.emit("data", deserializedData);
+  }
+  _handleChunk(data) {
+    const id = data.__peerData;
+    const chunkInfo = this._chunkedData[id] || {
+      data: [],
+      count: 0,
+      total: data.total
+    };
+    chunkInfo.data[data.n] = new Uint8Array(data.data);
+    chunkInfo.count++;
+    this._chunkedData[id] = chunkInfo;
+    if (chunkInfo.total === chunkInfo.count) {
+      delete this._chunkedData[id];
+      const data2 = (0, $fcbcc7538a6776d5$export$52c89ebcdc4f53f2)(chunkInfo.data);
+      this._handleDataMessage({
+        data: data2
+      });
+    }
+  }
+  _send(data, chunked) {
+    const blob = (0, $0cfd7828ad59115f$export$2a703dbb0cb35339)(data);
+    if (blob instanceof Promise) return this._send_blob(blob);
+    if (!chunked && blob.byteLength > this.chunker.chunkedMTU) {
+      this._sendChunks(blob);
+      return;
+    }
+    this._bufferedSend(blob);
+  }
+  async _send_blob(blobPromise) {
+    const blob = await blobPromise;
+    if (blob.byteLength > this.chunker.chunkedMTU) {
+      this._sendChunks(blob);
+      return;
+    }
+    this._bufferedSend(blob);
+  }
+  _sendChunks(blob) {
+    const blobs = this.chunker.chunk(blob);
+    (0, $257947e92926277a$export$2e2bcd8739ae039).log(`DC#${this.connectionId} Try to send ${blobs.length} chunks...`);
+    for (const blob2 of blobs) this.send(blob2, true);
+  }
+};
+var $bbaee3f15f714663$export$6f88fe47d32c9c94 = class extends (0, $a229bedbcaa6ca23$export$ff7c9d4c11d94e8b) {
+  _handleDataMessage({ data }) {
+    super.emit("data", data);
+  }
+  _send(data, _chunked) {
+    this._bufferedSend(data);
+  }
+  constructor(...args) {
+    super(...args), this.serialization = (0, $78455e22dea96b8c$export$89f507cf986a947).None;
+  }
+};
+var $817f931e3f9096cf$export$48880ac635f47186 = class extends (0, $a229bedbcaa6ca23$export$ff7c9d4c11d94e8b) {
+  // Handles a DataChannel message.
+  _handleDataMessage({ data }) {
+    const deserializedData = this.parse(this.decoder.decode(data));
+    const peerData = deserializedData["__peerData"];
+    if (peerData && peerData.type === "close") {
+      this.close();
+      return;
+    }
+    this.emit("data", deserializedData);
+  }
+  _send(data, _chunked) {
+    const encodedData = this.encoder.encode(this.stringify(data));
+    if (encodedData.byteLength >= (0, $4f4134156c446392$export$7debb50ef11d5e0b).chunkedMTU) {
+      this.emitError((0, $78455e22dea96b8c$export$49ae800c114df41d).MessageToBig, "Message too big for JSON channel");
+      return;
+    }
+    this._bufferedSend(encodedData);
+  }
+  constructor(...args) {
+    super(...args), this.serialization = (0, $78455e22dea96b8c$export$89f507cf986a947).JSON, this.encoder = new TextEncoder(), this.decoder = new TextDecoder(), this.stringify = JSON.stringify, this.parse = JSON.parse;
+  }
+};
+var $416260bce337df90$export$ecd1fc136c422448 = class _$416260bce337df90$export$ecd1fc136c422448 extends (0, $23779d1881157a18$export$6a678e589c8a4542) {
+  static #_ = this.DEFAULT_KEY = "peerjs";
+  /**
+  * The brokering ID of this peer
+  *
+  * If no ID was specified in {@apilink Peer | the constructor},
+  * this will be `undefined` until the {@apilink PeerEvents | `open`} event is emitted.
+  */
+  get id() {
+    return this._id;
+  }
+  get options() {
+    return this._options;
+  }
+  get open() {
+    return this._open;
+  }
+  /**
+  * @internal
+  */
+  get socket() {
+    return this._socket;
+  }
+  /**
+  * A hash of all connections associated with this peer, keyed by the remote peer's ID.
+  * @deprecated
+  * Return type will change from Object to Map<string,[]>
+  */
+  get connections() {
+    const plainConnections = /* @__PURE__ */ Object.create(null);
+    for (const [k, v] of this._connections) plainConnections[k] = v;
+    return plainConnections;
+  }
+  /**
+  * true if this peer and all of its connections can no longer be used.
+  */
+  get destroyed() {
+    return this._destroyed;
+  }
+  /**
+  * false if there is an active connection to the PeerServer.
+  */
+  get disconnected() {
+    return this._disconnected;
+  }
+  constructor(id, options) {
+    super(), this._serializers = {
+      raw: (0, $bbaee3f15f714663$export$6f88fe47d32c9c94),
+      json: (0, $817f931e3f9096cf$export$48880ac635f47186),
+      binary: (0, $9fcfddb3ae148f88$export$f0a5a64d5bb37108),
+      "binary-utf8": (0, $9fcfddb3ae148f88$export$f0a5a64d5bb37108),
+      default: (0, $9fcfddb3ae148f88$export$f0a5a64d5bb37108)
+    }, this._id = null, this._lastServerId = null, // States.
+    this._destroyed = false, this._disconnected = false, this._open = false, this._connections = /* @__PURE__ */ new Map(), this._lostMessages = /* @__PURE__ */ new Map();
+    let userId;
+    if (id && id.constructor == Object) options = id;
+    else if (id) userId = id.toString();
+    options = {
+      debug: 0,
+      host: (0, $4f4134156c446392$export$7debb50ef11d5e0b).CLOUD_HOST,
+      port: (0, $4f4134156c446392$export$7debb50ef11d5e0b).CLOUD_PORT,
+      path: "/",
+      key: _$416260bce337df90$export$ecd1fc136c422448.DEFAULT_KEY,
+      token: (0, $4f4134156c446392$export$7debb50ef11d5e0b).randomToken(),
+      config: (0, $4f4134156c446392$export$7debb50ef11d5e0b).defaultConfig,
+      referrerPolicy: "strict-origin-when-cross-origin",
+      serializers: {},
+      ...options
+    };
+    this._options = options;
+    this._serializers = {
+      ...this._serializers,
+      ...this.options.serializers
+    };
+    if (this._options.host === "/") this._options.host = window.location.hostname;
+    if (this._options.path) {
+      if (this._options.path[0] !== "/") this._options.path = "/" + this._options.path;
+      if (this._options.path[this._options.path.length - 1] !== "/") this._options.path += "/";
+    }
+    if (this._options.secure === void 0 && this._options.host !== (0, $4f4134156c446392$export$7debb50ef11d5e0b).CLOUD_HOST) this._options.secure = (0, $4f4134156c446392$export$7debb50ef11d5e0b).isSecure();
+    else if (this._options.host == (0, $4f4134156c446392$export$7debb50ef11d5e0b).CLOUD_HOST) this._options.secure = true;
+    if (this._options.logFunction) (0, $257947e92926277a$export$2e2bcd8739ae039).setLogFunction(this._options.logFunction);
+    (0, $257947e92926277a$export$2e2bcd8739ae039).logLevel = this._options.debug || 0;
+    this._api = new (0, $abf266641927cd89$export$2c4e825dc9120f87)(options);
+    this._socket = this._createServerConnection();
+    if (!(0, $4f4134156c446392$export$7debb50ef11d5e0b).supports.audioVideo && !(0, $4f4134156c446392$export$7debb50ef11d5e0b).supports.data) {
+      this._delayedAbort((0, $78455e22dea96b8c$export$9547aaa2e39030ff).BrowserIncompatible, "The current browser does not support WebRTC");
+      return;
+    }
+    if (!!userId && !(0, $4f4134156c446392$export$7debb50ef11d5e0b).validateId(userId)) {
+      this._delayedAbort((0, $78455e22dea96b8c$export$9547aaa2e39030ff).InvalidID, `ID "${userId}" is invalid`);
+      return;
+    }
+    if (userId) this._initialize(userId);
+    else this._api.retrieveId().then((id2) => this._initialize(id2)).catch((error) => this._abort((0, $78455e22dea96b8c$export$9547aaa2e39030ff).ServerError, error));
+  }
+  _createServerConnection() {
+    const socket = new (0, $8f5bfa60836d261d$export$4798917dbf149b79)(this._options.secure, this._options.host, this._options.port, this._options.path, this._options.key, this._options.pingInterval);
+    socket.on((0, $78455e22dea96b8c$export$3b5c4a4b6354f023).Message, (data) => {
+      this._handleMessage(data);
+    });
+    socket.on((0, $78455e22dea96b8c$export$3b5c4a4b6354f023).Error, (error) => {
+      this._abort((0, $78455e22dea96b8c$export$9547aaa2e39030ff).SocketError, error);
+    });
+    socket.on((0, $78455e22dea96b8c$export$3b5c4a4b6354f023).Disconnected, () => {
+      if (this.disconnected) return;
+      this.emitError((0, $78455e22dea96b8c$export$9547aaa2e39030ff).Network, "Lost connection to server.");
+      this.disconnect();
+    });
+    socket.on((0, $78455e22dea96b8c$export$3b5c4a4b6354f023).Close, () => {
+      if (this.disconnected) return;
+      this._abort((0, $78455e22dea96b8c$export$9547aaa2e39030ff).SocketClosed, "Underlying socket is already closed.");
+    });
+    return socket;
+  }
+  /** Initialize a connection with the server. */
+  _initialize(id) {
+    this._id = id;
+    this.socket.start(id, this._options.token);
+  }
+  /** Handles messages from the server. */
+  _handleMessage(message) {
+    const type = message.type;
+    const payload = message.payload;
+    const peerId = message.src;
+    switch (type) {
+      case (0, $78455e22dea96b8c$export$adb4a1754da6f10d).Open:
+        this._lastServerId = this.id;
+        this._open = true;
+        this.emit("open", this.id);
+        break;
+      case (0, $78455e22dea96b8c$export$adb4a1754da6f10d).Error:
+        this._abort((0, $78455e22dea96b8c$export$9547aaa2e39030ff).ServerError, payload.msg);
+        break;
+      case (0, $78455e22dea96b8c$export$adb4a1754da6f10d).IdTaken:
+        this._abort((0, $78455e22dea96b8c$export$9547aaa2e39030ff).UnavailableID, `ID "${this.id}" is taken`);
+        break;
+      case (0, $78455e22dea96b8c$export$adb4a1754da6f10d).InvalidKey:
+        this._abort((0, $78455e22dea96b8c$export$9547aaa2e39030ff).InvalidKey, `API KEY "${this._options.key}" is invalid`);
+        break;
+      case (0, $78455e22dea96b8c$export$adb4a1754da6f10d).Leave:
+        (0, $257947e92926277a$export$2e2bcd8739ae039).log(`Received leave message from ${peerId}`);
+        this._cleanupPeer(peerId);
+        this._connections.delete(peerId);
+        break;
+      case (0, $78455e22dea96b8c$export$adb4a1754da6f10d).Expire:
+        this.emitError((0, $78455e22dea96b8c$export$9547aaa2e39030ff).PeerUnavailable, `Could not connect to peer ${peerId}`);
+        break;
+      case (0, $78455e22dea96b8c$export$adb4a1754da6f10d).Offer: {
+        const connectionId = payload.connectionId;
+        let connection2 = this.getConnection(peerId, connectionId);
+        if (connection2) {
+          connection2.close();
+          (0, $257947e92926277a$export$2e2bcd8739ae039).warn(`Offer received for existing Connection ID:${connectionId}`);
+        }
+        if (payload.type === (0, $78455e22dea96b8c$export$3157d57b4135e3bc).Media) {
+          const mediaConnection = new (0, $5c1d08c7c57da9a3$export$4a84e95a2324ac29)(peerId, this, {
+            connectionId,
+            _payload: payload,
+            metadata: payload.metadata
+          });
+          connection2 = mediaConnection;
+          this._addConnection(peerId, connection2);
+          this.emit("call", mediaConnection);
+        } else if (payload.type === (0, $78455e22dea96b8c$export$3157d57b4135e3bc).Data) {
+          const dataConnection = new this._serializers[payload.serialization](peerId, this, {
+            connectionId,
+            _payload: payload,
+            metadata: payload.metadata,
+            label: payload.label,
+            serialization: payload.serialization,
+            reliable: payload.reliable
+          });
+          connection2 = dataConnection;
+          this._addConnection(peerId, connection2);
+          this.emit("connection", dataConnection);
+        } else {
+          (0, $257947e92926277a$export$2e2bcd8739ae039).warn(`Received malformed connection type:${payload.type}`);
+          return;
+        }
+        const messages = this._getMessages(connectionId);
+        for (const message2 of messages) connection2.handleMessage(message2);
+        break;
+      }
+      default: {
+        if (!payload) {
+          (0, $257947e92926277a$export$2e2bcd8739ae039).warn(`You received a malformed message from ${peerId} of type ${type}`);
+          return;
+        }
+        const connectionId = payload.connectionId;
+        const connection2 = this.getConnection(peerId, connectionId);
+        if (connection2 && connection2.peerConnection)
+          connection2.handleMessage(message);
+        else if (connectionId)
+          this._storeMessage(connectionId, message);
+        else (0, $257947e92926277a$export$2e2bcd8739ae039).warn("You received an unrecognized message:", message);
+        break;
+      }
+    }
+  }
+  /** Stores messages without a set up connection, to be claimed later. */
+  _storeMessage(connectionId, message) {
+    if (!this._lostMessages.has(connectionId)) this._lostMessages.set(connectionId, []);
+    this._lostMessages.get(connectionId).push(message);
+  }
+  /**
+  * Retrieve messages from lost message store
+  * @internal
+  */
+  //TODO Change it to private
+  _getMessages(connectionId) {
+    const messages = this._lostMessages.get(connectionId);
+    if (messages) {
+      this._lostMessages.delete(connectionId);
+      return messages;
+    }
+    return [];
+  }
+  /**
+  * Connects to the remote peer specified by id and returns a data connection.
+  * @param peer The brokering ID of the remote peer (their {@apilink Peer.id}).
+  * @param options for specifying details about Peer Connection
+  */
+  connect(peer, options = {}) {
+    options = {
+      serialization: "default",
+      ...options
+    };
+    if (this.disconnected) {
+      (0, $257947e92926277a$export$2e2bcd8739ae039).warn("You cannot connect to a new Peer because you called .disconnect() on this Peer and ended your connection with the server. You can create a new Peer to reconnect, or call reconnect on this peer if you believe its ID to still be available.");
+      this.emitError((0, $78455e22dea96b8c$export$9547aaa2e39030ff).Disconnected, "Cannot connect to new Peer after disconnecting from server.");
+      return;
+    }
+    const dataConnection = new this._serializers[options.serialization](peer, this, options);
+    this._addConnection(peer, dataConnection);
+    return dataConnection;
+  }
+  /**
+  * Calls the remote peer specified by id and returns a media connection.
+  * @param peer The brokering ID of the remote peer (their peer.id).
+  * @param stream The caller's media stream
+  * @param options Metadata associated with the connection, passed in by whoever initiated the connection.
+  */
+  call(peer, stream, options = {}) {
+    if (this.disconnected) {
+      (0, $257947e92926277a$export$2e2bcd8739ae039).warn("You cannot connect to a new Peer because you called .disconnect() on this Peer and ended your connection with the server. You can create a new Peer to reconnect.");
+      this.emitError((0, $78455e22dea96b8c$export$9547aaa2e39030ff).Disconnected, "Cannot connect to new Peer after disconnecting from server.");
+      return;
+    }
+    if (!stream) {
+      (0, $257947e92926277a$export$2e2bcd8739ae039).error("To call a peer, you must provide a stream from your browser's `getUserMedia`.");
+      return;
+    }
+    const mediaConnection = new (0, $5c1d08c7c57da9a3$export$4a84e95a2324ac29)(peer, this, {
+      ...options,
+      _stream: stream
+    });
+    this._addConnection(peer, mediaConnection);
+    return mediaConnection;
+  }
+  /** Add a data/media connection to this peer. */
+  _addConnection(peerId, connection2) {
+    (0, $257947e92926277a$export$2e2bcd8739ae039).log(`add connection ${connection2.type}:${connection2.connectionId} to peerId:${peerId}`);
+    if (!this._connections.has(peerId)) this._connections.set(peerId, []);
+    this._connections.get(peerId).push(connection2);
+  }
+  //TODO should be private
+  _removeConnection(connection2) {
+    const connections = this._connections.get(connection2.peer);
+    if (connections) {
+      const index = connections.indexOf(connection2);
+      if (index !== -1) connections.splice(index, 1);
+    }
+    this._lostMessages.delete(connection2.connectionId);
+  }
+  /** Retrieve a data/media connection for this peer. */
+  getConnection(peerId, connectionId) {
+    const connections = this._connections.get(peerId);
+    if (!connections) return null;
+    for (const connection2 of connections) {
+      if (connection2.connectionId === connectionId) return connection2;
+    }
+    return null;
+  }
+  _delayedAbort(type, message) {
+    setTimeout(() => {
+      this._abort(type, message);
+    }, 0);
+  }
+  /**
+  * Emits an error message and destroys the Peer.
+  * The Peer is not destroyed if it's in a disconnected state, in which case
+  * it retains its disconnected state and its existing connections.
+  */
+  _abort(type, message) {
+    (0, $257947e92926277a$export$2e2bcd8739ae039).error("Aborting!");
+    this.emitError(type, message);
+    if (!this._lastServerId) this.destroy();
+    else this.disconnect();
+  }
+  /**
+  * Destroys the Peer: closes all active connections as well as the connection
+  * to the server.
+  *
+  * :::caution
+  * This cannot be undone; the respective peer object will no longer be able
+  * to create or receive any connections, its ID will be forfeited on the server,
+  * and all of its data and media connections will be closed.
+  * :::
+  */
+  destroy() {
+    if (this.destroyed) return;
+    (0, $257947e92926277a$export$2e2bcd8739ae039).log(`Destroy peer with ID:${this.id}`);
+    this.disconnect();
+    this._cleanup();
+    this._destroyed = true;
+    this.emit("close");
+  }
+  /** Disconnects every connection on this peer. */
+  _cleanup() {
+    for (const peerId of this._connections.keys()) {
+      this._cleanupPeer(peerId);
+      this._connections.delete(peerId);
+    }
+    this.socket.removeAllListeners();
+  }
+  /** Closes all connections to this peer. */
+  _cleanupPeer(peerId) {
+    const connections = this._connections.get(peerId);
+    if (!connections) return;
+    for (const connection2 of connections) connection2.close();
+  }
+  /**
+  * Disconnects the Peer's connection to the PeerServer. Does not close any
+  *  active connections.
+  * Warning: The peer can no longer create or accept connections after being
+  *  disconnected. It also cannot reconnect to the server.
+  */
+  disconnect() {
+    if (this.disconnected) return;
+    const currentId = this.id;
+    (0, $257947e92926277a$export$2e2bcd8739ae039).log(`Disconnect peer with ID:${currentId}`);
+    this._disconnected = true;
+    this._open = false;
+    this.socket.close();
+    this._lastServerId = currentId;
+    this._id = null;
+    this.emit("disconnected", currentId);
+  }
+  /** Attempts to reconnect with the same ID.
+  *
+  * Only {@apilink Peer.disconnect | disconnected peers} can be reconnected.
+  * Destroyed peers cannot be reconnected.
+  * If the connection fails (as an example, if the peer's old ID is now taken),
+  * the peer's existing connections will not close, but any associated errors events will fire.
+  */
+  reconnect() {
+    if (this.disconnected && !this.destroyed) {
+      (0, $257947e92926277a$export$2e2bcd8739ae039).log(`Attempting reconnection to server with ID ${this._lastServerId}`);
+      this._disconnected = false;
+      this._initialize(this._lastServerId);
+    } else if (this.destroyed) throw new Error("This peer cannot reconnect to the server. It has already been destroyed.");
+    else if (!this.disconnected && !this.open)
+      (0, $257947e92926277a$export$2e2bcd8739ae039).error("In a hurry? We're still trying to make the initial connection!");
+    else throw new Error(`Peer ${this.id} cannot reconnect because it is not disconnected from the server!`);
+  }
+  /**
+  * Get a list of available peer IDs. If you're running your own server, you'll
+  * want to set allow_discovery: true in the PeerServer options. If you're using
+  * the cloud server, email team@peerjs.com to get the functionality enabled for
+  * your key.
+  */
+  listAllPeers(cb = (_) => {
+  }) {
+    this._api.listAllPeers().then((peers) => cb(peers)).catch((error) => this._abort((0, $78455e22dea96b8c$export$9547aaa2e39030ff).ServerError, error));
+  }
+};
+var $dd0187d7f28e386f$export$2e2bcd8739ae039 = (0, $416260bce337df90$export$ecd1fc136c422448);
+
+// src/flow.mjs
+async function waitForDrain(channel, timeoutMs = 3e4) {
+  if (!channel || channel.readyState !== "open") throw new Error("Device disconnected");
+  if (channel.bufferedAmount <= 256 * 1024) return;
+  await new Promise((resolve, reject) => {
+    let timer;
+    const cleanup = () => {
+      clearTimeout(timer);
+      channel.removeEventListener("bufferedamountlow", drained);
+      channel.removeEventListener("close", closed);
+      channel.removeEventListener("error", closed);
+    };
+    const drained = () => {
+      if (channel.bufferedAmount <= 128 * 1024) {
+        cleanup();
+        resolve();
+      }
+    };
+    const closed = () => {
+      cleanup();
+      reject(new Error("Device disconnected"));
+    };
+    channel.bufferedAmountLowThreshold = 128 * 1024;
+    channel.addEventListener("bufferedamountlow", drained);
+    channel.addEventListener("close", closed);
+    channel.addEventListener("error", closed);
+    timer = setTimeout(() => {
+      cleanup();
+      reject(new Error("Transfer stalled. Keep the phone screen on and try again."));
+    }, timeoutMs);
+    if (channel.readyState !== "open") closed();
+    else drained();
+  });
+}
+function openPeer(peer, timeoutMs = 1e4) {
+  return new Promise((resolve, reject) => {
+    let timer;
+    const cleanup = () => {
+      clearTimeout(timer);
+      peer.off("open", opened);
+      peer.off("error", failed);
+      peer.off("close", closed);
+    };
+    const opened = () => {
+      cleanup();
+      resolve();
+    };
+    const failed = (error) => {
+      cleanup();
+      reject(error);
+    };
+    const closed = () => failed(new Error("Connection cancelled"));
+    peer.once("open", opened);
+    peer.once("error", failed);
+    peer.once("close", closed);
+    timer = setTimeout(() => failed(new Error("Connection service timed out")), timeoutMs);
+  });
+}
+
+// src/peer-config.mjs
+var peerOptions = {
+  host: "0.peerjs.com",
+  port: 443,
+  path: "/",
+  key: "peerjs",
+  secure: true,
+  debug: 0,
+  config: { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] }
+};
+
+// src/connection.mjs
+var Connection = class {
+  constructor({ onState = () => {
+  }, onError = () => {
+  }, onReady = () => {
+  }, PeerClass = $dd0187d7f28e386f$export$2e2bcd8739ae039, ...handlers }) {
+    Object.assign(this, { onState, onError, onReady, PeerClass, handlers });
+    this.pending = /* @__PURE__ */ new Set();
+    this.pendingClosers = /* @__PURE__ */ new Map();
+    this.initialAttempts = 0;
+    this.closed = false;
+  }
+  async start(role, pairing2, options = peerOptions) {
+    this.role = role;
+    this.pairing = pairing2;
+    this.resumable = Boolean(this.handlers.resumeState);
+    this.expiry = setTimeout(() => this.close("Pairing expired. Connect again with a new QR code."), Math.max(1, pairing2.expires - Date.now()));
+    try {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        if (this.closed) throw new Error("Connection cancelled");
+        this.peer = new this.PeerClass(role === "pc" ? pairing2.id : createPeerId(), options);
+        try {
+          await openPeer(this.peer);
+          break;
+        } catch (error) {
+          this.peer.destroy();
+          if (this.closed || attempt === 1) throw new Error("Could not reach the pairing service. Check internet access on both devices and try Connect again.");
+          this.onState("Retrying connection service\u2026");
+        }
+      }
+    } catch (error) {
+      this.close();
+      throw error;
+    }
+    if (this.closed) throw new Error("Connection cancelled");
+    this.peer.on("error", (error) => {
+      if (this.transfer || this.closed) return;
+      if (this.resumable && this.hasConnected) {
+        this.scheduleReconnect();
+        return;
+      }
+      if (this.retryInitial && ["network", "disconnected", "peer-unavailable", "webrtc"].includes(error.type)) {
+        for (const stop of [...this.pendingClosers.values()]) stop();
+        this.scheduleReconnect();
+        return;
+      }
+      this.onError(new Error(error.type === "peer-unavailable" ? pairing2.network === "direct" ? "The other device is no longer waiting. Create a new pairing and retry." : "Your PC is not connected. Open PocketDrop and scan a new QR code." : "Connection service unavailable or network blocked. Try Connect again."));
+      this.close("Not connected");
+    });
+    this.peer.on("disconnected", () => {
+      if (this.closed) return;
+      if (this.resumable && (this.hasConnected || this.pairing.network === "direct")) {
+        this.scheduleReconnect();
+        return;
+      }
+      if (this.transfer) return;
+      this.onError(new Error("Pairing service disconnected. Try Connect again."));
+      this.close("Not connected");
+    });
+    this.peer.on("connection", (connection2) => {
+      if (role !== "pc" || this.transfer || this.pending.size >= 3 || this.closed) {
+        connection2.close();
+        return;
+      }
+      this.attach(connection2);
+    });
+    this.online = () => {
+      if (this.resumable && !this.closed && (!this.transfer || this.peer.disconnected)) this.scheduleReconnect();
+    };
+    globalThis.addEventListener?.("online", this.online);
+    if (role === "phone") {
+      if (this.retryInitial) this.initialTimer = setTimeout(() => this.failInitial(), 65e3);
+      this.dial();
+    } else this.onState("Scan the QR code with your phone");
+  }
+  get retryInitial() {
+    return this.resumable && this.pairing?.network === "direct" && !this.hasConnected;
+  }
+  failInitial() {
+    if (this.closed || this.transfer) return;
+    this.onError(new Error("A direct connection could not be established after retrying. Try the same Wi-Fi or another network. Some routers and mobile networks block direct connections; no relay is used."));
+    this.close("Not connected");
+  }
+  dial() {
+    if (this.closed || this.transfer || this.pending.size || !this.peer.open) return;
+    if (this.retryInitial && this.initialAttempts >= 2) {
+      this.failInitial();
+      return;
+    }
+    if (!this.hasConnected) this.initialAttempts++;
+    this.attach(this.peer.connect(this.pairing.id, { serialization: "raw", reliable: true, metadata: { v: 1 } }));
+  }
+  attach(connection2) {
+    this.pending.add(connection2);
+    let stage = "waiting", queue = Promise.resolve(), clientNonce, transfer2, ended = false;
+    const finish = (retry = true) => {
+      if (ended) return;
+      ended = true;
+      clearTimeout(timeout);
+      this.pending.delete(connection2);
+      this.pendingClosers.delete(connection2);
+      const wasActive = transfer2 && this.transfer === transfer2;
+      if (wasActive) this.transfer = null;
+      transfer2?.close();
+      if (this.closed || !retry) return;
+      if (this.resumable && (this.hasConnected || this.retryInitial && this.role === "phone")) this.scheduleReconnect();
+      else if (wasActive) {
+        if (this.role === "pc" && Date.now() < this.pairing.expires) this.onState("Waiting for your phone\u2026");
+        else this.close("Disconnected. Connect again when you\u2019re ready.");
+      }
+    };
+    const stop = (retry = true) => {
+      finish(retry);
+      connection2.close();
+    };
+    this.pendingClosers.set(connection2, stop);
+    const timeout = setTimeout(() => {
+      stop();
+      if (this.closed || this.resumable && this.hasConnected || this.retryInitial && this.role === "phone") return;
+      this.onError(new Error(this.pairing.network === "direct" ? "The direct connection timed out. Waiting for the other device to retry." : "Devices could not connect. Keep both devices on the same Wi-Fi and scan a fresh QR code."));
+      if (this.role === "phone") this.close("Not connected");
+    }, 3e4);
+    const transcript = (nonce) => ["PocketDrop handshake v1", this.pairing.id, this.role === "pc" ? connection2.peer : this.peer.id, nonce];
+    connection2.on("open", async () => {
+      if (this.closed || ended) {
+        stop(false);
+        return;
+      }
+      if (this.role === "phone") {
+        clientNonce = b64(random(32));
+        stage = "hello";
+        try {
+          const proof = await mac(this.pairing.secret, transcript(clientNonce));
+          if (!ended && !this.closed) connection2.send(JSON.stringify({ t: "hello", nonce: clientNonce, proof }));
+        } catch (error) {
+          stop(false);
+          this.onError(error);
+        }
+      }
+    });
+    connection2.on("data", (message) => {
+      queue = queue.then(async () => {
+        if (ended || this.closed) return;
+        if (transfer2) {
+          await transfer2.receive(message);
+          return;
+        }
+        if (typeof message !== "string" || message.length > 1500 || Date.now() >= this.pairing.expires || this.closed) throw new Error("Invalid pairing handshake");
+        const m = JSON.parse(message);
+        if (this.role === "pc" && stage === "waiting") {
+          if (this.transfer || m.t !== "hello" || !/^[A-Za-z0-9_-]{43}$/.test(m.nonce) || !await checkMac(this.pairing.secret, transcript(m.nonce), m.proof)) throw new Error("Pairing authentication failed");
+          stage = "authenticating";
+          clientNonce = m.nonce;
+          const serverNonce = b64(random(32)), full = [...transcript(clientNonce), serverNonce];
+          const keys = await channelKeys(this.pairing.secret, full, this.role);
+          const proof = await mac(this.pairing.secret, [...full, "welcome"]);
+          if (ended || this.closed) return;
+          connection2.send(JSON.stringify({ t: "welcome", nonce: serverNonce, proof }));
+          transfer2 = this.establish(connection2, keys, full);
+          clearTimeout(timeout);
+        } else if (this.role === "phone" && stage === "hello") {
+          const full = [...transcript(clientNonce), m.nonce];
+          if (m.t !== "welcome" || !/^[A-Za-z0-9_-]{43}$/.test(m.nonce) || !await checkMac(this.pairing.secret, [...full, "welcome"], m.proof)) throw new Error("Computer authentication failed");
+          const keys = await channelKeys(this.pairing.secret, full, this.role);
+          if (ended || this.closed) return;
+          transfer2 = this.establish(connection2, keys, full);
+          clearTimeout(timeout);
+        } else throw new Error("Unexpected handshake");
+      }).catch((error) => {
+        if (ended || this.closed) return;
+        stop(false);
+        this.onError(error);
+        if (this.role === "phone") this.close("Not connected");
+      });
+    });
+    connection2.on("close", () => finish());
+    connection2.on("error", () => {
+      if (ended) return;
+      stop();
+      if (!this.resumable) this.onError(new Error("Connection lost. Incomplete files are discarded."));
+    });
+  }
+  establish(connection2, keys, transcript) {
+    if (this.closed || this.transfer || !connection2.open) {
+      connection2.close();
+      throw new Error("This pairing is already in use or disconnected");
+    }
+    const send = async (frame) => {
+      await waitForDrain(connection2.dataChannel);
+      if (!connection2.open) throw new Error("Device disconnected");
+      connection2.send(frame);
+    };
+    const maxMessageSize = connection2.peerConnection?.sctp?.maxMessageSize;
+    const TransferClass = this.resumable ? ResumableTransfer : Transfer;
+    this.hasConnected = true;
+    clearTimeout(this.initialTimer);
+    clearTimeout(this.retryTimer);
+    this.retryTimer = null;
+    const pc = connection2.peerConnection;
+    let lostTimer;
+    const checkICE = () => {
+      clearTimeout(lostTimer);
+      if (this.resumable && ["disconnected", "failed"].includes(pc?.iceConnectionState)) lostTimer = setTimeout(() => connection2.close(), 5e3);
+    };
+    pc?.addEventListener("iceconnectionstatechange", checkICE);
+    connection2.on("close", () => {
+      clearTimeout(lostTimer);
+      pc?.removeEventListener("iceconnectionstatechange", checkICE);
+    });
+    this.transfer = new TransferClass({ keys, send, binaryChunks: maxMessageSize === 0 || (maxMessageSize ?? 65536) >= 60 * 1024 + 61, close: () => connection2.close(), onError: this.onError, ...this.handlers, onDisconnect: () => this.close() });
+    this.onState("Connected \xB7 encrypted");
+    const established = this.transfer;
+    void mac(this.pairing.secret, [...transcript, "display-code"]).then((code) => {
+      if (!this.closed && this.transfer === established) this.onReady(established, code.slice(0, 8));
+    }).catch((error) => {
+      this.onError(error);
+      this.close();
+    });
+    return this.transfer;
+  }
+  scheduleReconnect() {
+    if (this.closed || Date.now() >= this.pairing.expires) return;
+    if (!this.transfer) this.onState(this.hasConnected ? "Reconnecting\u2026 keep Chrome open" : "Connecting\u2026 retrying direct connection");
+    if (this.retryTimer) return;
+    this.retryTimer = setTimeout(() => {
+      this.retryTimer = null;
+      if (this.closed) return;
+      if (this.peer.destroyed) {
+        this.failInitial();
+        return;
+      }
+      if (this.peer.disconnected && !this.peer.destroyed) {
+        try {
+          this.peer.reconnect();
+        } catch {
+        }
+      }
+      if (this.role === "phone") this.dial();
+      if (!this.transfer || this.peer.disconnected) this.scheduleReconnect();
+    }, 3e3);
+  }
+  close(reason = "Disconnected") {
+    if (this.closed) return;
+    this.closed = true;
+    clearTimeout(this.expiry);
+    clearTimeout(this.initialTimer);
+    clearTimeout(this.retryTimer);
+    this.retryTimer = null;
+    globalThis.removeEventListener?.("online", this.online);
+    this.transfer?.close();
+    this.transfer = null;
+    for (const stop of [...this.pendingClosers.values()]) stop(false);
+    this.pending.clear();
+    this.peer?.destroy();
+    this.onState(reason);
+  }
+};
+
+// src/direct.mjs
+function safeFilename(value) {
+  let name = String(value).replace(/[\x00-\x1f\x7f<>:"/\\|?*]/g, "_").replace(/[. ]+$/g, "");
+  if (!name || /^\.+$/.test(name)) name = "received-file";
+  if (/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(name)) name = "_" + name;
+  return name;
+}
+async function requireDirectory(library2) {
+  const row = await library2.get("keys", "receive-directory");
+  if (!row?.handle || await row.handle.queryPermission({ mode: "readwrite" }) !== "granted") {
+    throw new Error("Choose your PC folder and allow access before receiving files.");
+  }
+  return row.handle;
+}
+async function removePlaceholder(job) {
+  if (await job.directory.queryPermission({ mode: "readwrite" }) !== "granted") return false;
+  try {
+    const current = await job.directory.getFileHandle(job.name);
+    if (!await current.isSameEntry(job.handle)) return true;
+    const file = await current.getFile();
+    if (file.size === 0 && file.lastModified === job.created) await job.directory.removeEntry(job.name);
+    return true;
+  } catch (error) {
+    if (error.name === "NotFoundError") return true;
+    throw error;
+  }
+}
+async function recoverDirect(library2) {
+  for (const job of await library2.all("keys")) {
+    if (!job.id.startsWith("direct-job:")) continue;
+    if (job.size === 0) {
+      await library2.tx(["keys"], (tx) => tx.objectStore("keys").delete(job.id));
+      continue;
+    }
+    if (await removePlaceholder(job)) await library2.tx(["keys"], (tx) => tx.objectStore("keys").delete(job.id));
+  }
+}
+async function beginDirectFile(directory, metadata2, journal, maxFileSize = MAX_FILE) {
+  if (!Number.isSafeInteger(metadata2.size) || metadata2.size < 0 || metadata2.size > maxFileSize || typeof metadata2.name !== "string" || !metadata2.name || metadata2.name.length > 240) throw new Error(maxFileSize > MAX_FILE ? "Choose a valid file up to 10 GB" : "Choose a file up to 500 MB");
+  if (await directory.queryPermission({ mode: "readwrite" }) !== "granted") throw new Error("Folder access was removed. Choose your PC folder again.");
+  const original = safeFilename(metadata2.name), dot = original.lastIndexOf(".");
+  const stem = dot > 0 ? original.slice(0, dot) : original, extension = dot > 0 ? original.slice(dot) : "";
+  let name, handle;
+  for (let number = 0; number < 1e4; number++) {
+    name = number ? `${stem} (${number})${extension}` : original;
+    try {
+      await directory.getFileHandle(name);
+      continue;
+    } catch (error) {
+      if (error.name === "TypeMismatchError") continue;
+      if (error.name !== "NotFoundError") throw error;
+    }
+    handle = await directory.getFileHandle(name, { create: true });
+    if ((await handle.getFile()).size !== 0) {
+      handle = null;
+      continue;
+    }
+    break;
+  }
+  if (!handle) throw new Error("Could not choose an unused filename in that folder.");
+  const job = { id: "direct-job:" + crypto.randomUUID(), directory, handle, name, size: metadata2.size, created: (await handle.getFile()).lastModified };
+  let writer, state2 = "writing", received = 0;
+  const clear = () => journal.clear(job.id);
+  try {
+    await journal.record(job);
+    writer = await handle.createWritable({ keepExistingData: false, mode: "exclusive" });
+  } catch (error) {
+    await removePlaceholder(job).catch(() => {
+    });
+    await clear().catch(() => {
+    });
+    throw error;
+  }
+  let buffer = new Uint8Array(1024 * 1024), used = 0;
+  async function flush() {
+    if (used) {
+      await writer.write(buffer.subarray(0, used));
+      used = 0;
+    }
+  }
+  return {
+    name,
+    async write(bytes2) {
+      if (state2 !== "writing" || received + bytes2.length > metadata2.size) throw new Error("Invalid direct file size");
+      for (let offset = 0; offset < bytes2.length; ) {
+        const n = Math.min(buffer.length - used, bytes2.length - offset);
+        buffer.set(bytes2.subarray(offset, offset + n), used);
+        used += n;
+        offset += n;
+        if (used === buffer.length) await flush();
+      }
+      received += bytes2.length;
+      if (received === metadata2.size) await flush();
+    },
+    async commit() {
+      if (state2 !== "writing" || received !== metadata2.size) throw new Error("Incomplete direct file");
+      state2 = "committing";
+      try {
+        await flush();
+        await writer.close();
+        state2 = "complete";
+        buffer = null;
+      } catch (error) {
+        state2 = "writing";
+        throw error;
+      }
+      await clear().catch(() => {
+      });
+      return name;
+    },
+    async abort() {
+      if (state2 !== "writing") return;
+      state2 = "aborted";
+      buffer = null;
+      used = 0;
+      await writer.abort().catch(() => {
+      });
+      if (await removePlaceholder(job)) await clear();
+    }
+  };
+}
+
+// src/app.mjs
+var $ = (id) => document.getElementById(id);
+var isPC = Boolean(globalThis.chrome?.runtime?.id);
+var library;
+var folders = [];
+var files = [];
+var connection;
+var transfer;
+var pairing;
+var pairingLink = "";
+var busy = false;
+var cancelBatch = false;
+var phoneFiles = [];
+var phoneExports = /* @__PURE__ */ new Map();
+var desktop = { active: false };
+var desktopRevision = -1;
+var lastUpload = 0;
+var uploadTimer;
+var lastSaved;
+var lastSent;
+var receiveDirectory;
+var proMode = isPC && PRO_PREVIEW && localStorage.getItem("pro-test") === "true";
+var phoneResume;
+var licenceActive = false;
+async function refreshLicence() {
+  if (!isPC || !LICENSE_CONFIG.enabled) return;
+  try {
+    licenceActive = (await checkLicense()).status === "active";
+  } catch {
+    licenceActive = false;
+  }
+  proMode = licenceActive;
+  renderPro();
+  document.querySelector(".lifetime-access").textContent = licenceActive ? "Pro active \xB7 Manage licence \u2197" : "Get Lifetime Access \u2197";
+  const restoreToggle = document.querySelector(".restore-pro-link");
+  restoreToggle.hidden = licenceActive;
+  if (licenceActive) {
+    document.getElementById("inline-restore").hidden = true;
+    restoreToggle.setAttribute("aria-expanded", "false");
+  }
+  const plan = document.getElementById("license-plan");
+  if (plan) plan.textContent = licenceActive ? "Pro Plan" : "Free Plan";
+}
+if (isPC && LICENSE_CONFIG.enabled) {
+  proMode = false;
+  const plan = document.createElement("span");
+  plan.id = "license-plan";
+  plan.textContent = "Free Plan";
+  plan.style.cssText = "display:block;text-align:center;font-size:12px;font-weight:600;color:var(--muted);margin:8px 0";
+  document.querySelector(".footer-actions").before(plan);
+  document.querySelector(".pro-preview").hidden = true;
+  document.querySelector(".lifetime-access").addEventListener("click", (event) => {
+    event.preventDefault();
+    void (licenceActive ? manageLicense() : openCheckout()).catch((error) => notice(error.message));
+  });
+  document.querySelector(".restore-pro-link").addEventListener("click", (event) => {
+    const form = document.getElementById("inline-restore");
+    const open = form.hidden;
+    form.hidden = !open;
+    event.currentTarget.setAttribute("aria-expanded", String(open));
+    if (open) document.getElementById("inline-restore-key").focus();
+  });
+  document.getElementById("inline-restore").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const key = document.getElementById("inline-restore-key");
+    const status = document.getElementById("inline-restore-status");
+    const submit = form.querySelector('button[type="submit"]');
+    submit.disabled = true;
+    status.hidden = false;
+    status.textContent = "Checking recovery key\u2026";
+    void restoreLicense(key.value).then(async () => {
+      key.value = "";
+      status.textContent = "Pro restored successfully.";
+      await refreshLicence();
+    }).catch((error) => {
+      status.textContent = error.message;
+    }).finally(() => {
+      submit.disabled = false;
+    });
+  });
+  document.addEventListener("click", (event) => {
+    if (!licenceActive && event.target.closest("#mode-pc,#create-pc-link,#join-pc")) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      void openCheckout().catch((error) => notice(error.message));
+    }
+  }, true);
+  window.addEventListener("focus", () => void refreshLicence());
+}
+function renderPro() {
+  const deviceModes = $("device-modes");
+  const pcModeButton = $("mode-pc");
+  if (deviceModes) deviceModes.hidden = Boolean(LICENSE_CONFIG.enabled && !licenceActive);
+  if (pcModeButton) pcModeButton.hidden = Boolean(LICENSE_CONFIG.enabled && !licenceActive);
+  if (LICENSE_CONFIG.enabled && !licenceActive && !desktop.active && deviceMode === "pc") deviceMode = "phone";
+  $("pro-mode").checked = proMode;
+  $("pro-mode").disabled = Boolean(desktop.active);
+  $("file-limit").textContent = proMode ? "10 GB / FILE \xB7 PRO TEST" : "500 MB / FILE";
+  if (LICENSE_CONFIG.enabled && proMode) $("file-limit").textContent = "10 GB / FILE \xB7 PRO";
+  $("pair-expiry").textContent = proMode ? "One device \xB7 expires in 24 hours" : "One phone \xB7 expires in 1 hour";
+  $("pc-expiry").textContent = proMode ? "Private link \xB7 expires in 24 hours" : "Private link \xB7 expires in 1 hour";
+  if (!isPC) {
+    document.body.classList.toggle("pro-phone", proMode);
+    if (proMode) {
+      $("pc-directory").querySelector("h2").textContent = "Save directly to phone";
+      $("choose-directory").textContent = "Choose phone folder";
+      $("privacy-summary").textContent = "Pro test \xB7 Keep this page open to resume";
+    }
+  }
+}
+$("pro-mode").addEventListener("change", () => {
+  if (!isPC || desktop.active) return;
+  proMode = $("pro-mode").checked;
+  localStorage.setItem("pro-test", String(proMode));
+  renderPro();
+});
+var deviceMode = "phone";
+function renderDeviceMode() {
+  const pc = deviceMode === "pc";
+  $("mode-phone").setAttribute("aria-pressed", String(!pc));
+  $("mode-pc").setAttribute("aria-pressed", String(pc));
+  $("mode-phone").disabled = $("mode-pc").disabled = Boolean(desktop.active);
+  $("pc-pair").hidden = pc;
+  $("pc-share").hidden = !pc;
+  $("pair-heading").textContent = pc ? "Connect Your PC" : "Connect Your Phone";
+  $("pc-share-start").hidden = Boolean(desktop.active);
+  $("pc-share-link").hidden = !pc || !desktop.link || Boolean(desktop.connected);
+  $("pc-link-output").value = pc ? desktop.link || "" : "";
+  if (pc) {
+    $("pc-share").querySelector("p").textContent = "Choose a receiving folder on both PCs. Create a private code on one PC and paste it into the other extension.";
+    $("create-pc-link").textContent = "Create connection code \u2197";
+    $("pc-share-start").querySelector("label").textContent = "Paste the other PC\u2019s connection code";
+    $("pc-link-input").placeholder = "Paste private connection code";
+    $("copy-pc-link").textContent = "Copy connection code";
+    $("pc-expiry").textContent = "Connect within 2 minutes \xB7 keep this code private";
+    $("pc-share-link").querySelector("p").textContent = proMode ? "Only share with your other PC. Anyone with this code can connect. Keep Chrome open for encrypted transfers and resume. Disconnect ends the session." : "Only share with your other PC. Anyone with this code can connect while it is active. Keep Chrome open. Disconnect ends the session.";
+  }
+  renderConnectionStatus();
+}
+function renderConnectionStatus() {
+  if (!isPC) return;
+  const pending = deviceMode === "pc" && desktop.active;
+  $("connection-status").textContent = desktop.connected ? "Connected" : pending ? "Connecting\u2026" : deviceMode === "pc" ? "Not connected" : desktop.status || "Not connected";
+  $("connection-status").classList.toggle("connected", Boolean(desktop.connected));
+}
+var phoneRecoveryOpen = false;
+function uploaded(folder, completedAt = Date.now(), direct = false) {
+  clearTimeout(uploadTimer);
+  const remaining = (direct ? 12e4 : 6e4) - (Date.now() - completedAt);
+  if (remaining <= 0) {
+    $("transfer-result").hidden = true;
+    return;
+  }
+  $("transfer-result").textContent = direct ? `Files Saved to PC folder "${folder}" \u2014 open this folder in File Explorer.` : isPC ? `Uploaded \u2014 click ${deviceMode === "pc" ? "To PC" : "To phone"} to send.` : `Uploaded \u2014 check in PC "${folder}"`;
+  $("transfer-result").hidden = false;
+  uploadTimer = setTimeout(() => {
+    $("transfer-result").hidden = true;
+  }, remaining);
+}
+async function sessionCommand(command, data) {
+  const result = await chrome.runtime.sendMessage({ target: "session-command", command, data });
+  if (result?.error) throw new Error(result.error);
+  if (result?.snapshot) await applySession(result.snapshot);
+  return result;
+}
+async function applySession(snapshot) {
+  const controlsChanged = JSON.stringify([desktop.mode, desktop.connected, desktop.sending, desktop.saving]) !== JSON.stringify([snapshot.mode, snapshot.connected, snapshot.sending, snapshot.saving]);
+  desktop = snapshot;
+  if (snapshot.active) {
+    deviceMode = snapshot.mode || "phone";
+    proMode = Boolean(snapshot.pro);
+  }
+  renderPro();
+  renderDeviceMode();
+  $("choose-directory").disabled = Boolean(snapshot.receiving);
+  $("choose-directory").title = snapshot.receiving ? "Wait for the incoming file to finish" : "";
+  transfer = snapshot.connected ? { outgoing: snapshot.sending, incoming: snapshot.receiving } : null;
+  renderConnectionStatus();
+  $("connect").hidden = Boolean(snapshot.active);
+  $("connect").disabled = false;
+  $("disconnect").hidden = !snapshot.active;
+  $("paired").hidden = !snapshot.connected;
+  $("safety-code").textContent = snapshot.code || "";
+  $("qr-area").hidden = deviceMode === "pc" || !snapshot.link || snapshot.connected;
+  if (pairingLink !== (snapshot.link || "")) {
+    pairingLink = snapshot.link || "";
+    $("pair-link").value = pairingLink;
+    if (pairingLink && deviceMode !== "pc") $("qr").src = await import_qrcode.default.toDataURL(pairingLink, { width: 320, margin: 2, errorCorrectionLevel: "M", color: { dark: "#173b80", light: "#ffffff" } });
+    else $("qr").removeAttribute("src");
+  }
+  if (snapshot.progress) progress(snapshot.progress.name, snapshot.progress.loaded, snapshot.progress.total);
+  else if (!busy) $("progress-area").hidden = true;
+  if (!snapshot.progress && snapshot.upload && snapshot.upload.id !== lastUpload) {
+    $("notice").hidden = true;
+    lastUpload = snapshot.upload.id;
+    uploaded(snapshot.upload.folder, snapshot.upload.completedAt || 0, true);
+  }
+  if (snapshot.saved && snapshot.saved.id !== lastSaved) {
+    lastSaved = snapshot.saved.id;
+    if (Date.now() - snapshot.saved.at < 6e4 && snapshot.saved.at > (snapshot.upload?.completedAt || 0) && snapshot.saved.at > (snapshot.sent?.at || 0)) {
+      clearTimeout(uploadTimer);
+      $("transfer-result").textContent = "Saved to PC \u2014 kept in PocketDrop";
+      $("transfer-result").hidden = false;
+      uploadTimer = setTimeout(() => {
+        $("transfer-result").hidden = true;
+      }, 6e4 - (Date.now() - snapshot.saved.at));
+    }
+  }
+  if (snapshot.sent && snapshot.sent.id !== lastSent && !snapshot.progress) {
+    lastSent = snapshot.sent.id;
+    if (snapshot.sent.at > (snapshot.upload?.completedAt || 0) && snapshot.sent.at > (snapshot.saved?.at || 0)) {
+      clearTimeout(uploadTimer);
+      $("transfer-result").hidden = true;
+    }
+  }
+  if (snapshot.error) {
+    notice(snapshot.error);
+    if (isPC) void showDirectoryStatus().catch(() => {
+    });
+  }
+  if (library && desktopRevision !== snapshot.revision) {
+    desktopRevision = snapshot.revision;
+    await refresh();
+  } else if (controlsChanged) renderFileList();
+  if (snapshot.active && snapshot.destination) $("destination").value = snapshot.destination;
+}
+if (isPC) chrome.runtime.onMessage.addListener((message) => {
+  if (message?.target === "session-ui") void applySession(message.snapshot).catch((error) => notice(error.message));
+});
+var notice = (message) => {
+  $("notice").textContent = message;
+  $("notice").classList.remove("success");
+  $("notice").hidden = false;
+};
+var bytes = (n) => n < 1024 ? `${n} B` : n < 1048576 ? `${(n / 1024).toFixed(1)} KB` : n < 1073741824 ? `${(n / 1048576).toFixed(1)} MB` : `${(n / 1073741824).toFixed(1)} GB`;
+function state(message) {
+  if (message.startsWith("Reconnecting")) {
+    transfer = null;
+    message = "Connection lost \u2014 reconnecting to resume";
+  }
+  if (connection?.closed) void phoneResume?.clear();
+  $("connection-status").textContent = message === "Connected \xB7 encrypted" ? "Connected" : message;
+  const connected = message === "Connected \xB7 encrypted";
+  $("connection-status").classList.toggle("connected", connected);
+  if (connected) {
+    $("qr-area").hidden = true;
+    $("paired").hidden = false;
+    $("join").hidden = true;
+  } else if (connection?.closed) {
+    transfer = null;
+    $("paired").hidden = true;
+    $("qr-area").hidden = true;
+    $("disconnect").hidden = true;
+    $("connect").disabled = false;
+    $("connect").hidden = false;
+    $("join").hidden = false;
+    $("join").disabled = false;
+    pairingLink = "";
+    $("pair-link").value = "";
+    $("qr").removeAttribute("src");
+  }
+  renderFileList();
+}
+async function run(fn) {
+  if (busy) {
+    notice("Please wait for the current action to finish.");
+    return;
+  }
+  $("notice").hidden = true;
+  busy = true;
+  cancelBatch = false;
+  $("file-input").disabled = true;
+  try {
+    await fn();
+  } catch (error) {
+    notice(error.name === "QuotaExceededError" ? "Chrome storage is full. Download and delete files to free space." : error.message);
+  } finally {
+    busy = false;
+    $("file-input").disabled = false;
+    $("progress-area").hidden = true;
+    $("file-input").value = "";
+  }
+}
+function progress(name, loaded, total) {
+  $("transfer-result").hidden = true;
+  $("progress-area").hidden = false;
+  $("progress-label").textContent = name;
+  $("progress").value = total ? Math.round(loaded / total * 100) : 100;
+}
+function fillDestinations(list) {
+  const selected = $("destination").value;
+  $("destination").replaceChildren();
+  for (const folder of list) {
+    const option = document.createElement("option");
+    option.value = folder.id;
+    option.textContent = folder.name;
+    $("destination").append(option);
+  }
+  if (!isPC) {
+    $("destination").value = list[0]?.id || "";
+    return;
+  }
+  if ([...$("destination").options].some((x) => x.value === selected)) $("destination").value = selected;
+}
+async function refresh() {
+  folders = (await library.folders()).map((folder) => folder.id === "inbox" ? { ...folder, name: "All files" } : folder);
+  files = [...await library.files(), ...await directSources(library)];
+  fillDestinations(folders);
+  $("storage-size").textContent = `${files.length} files \xB7 ${bytes(files.reduce((sum, file) => sum + file.size, 0))} saved`;
+  $("folder-title").textContent = "Files to send";
+  renderFileList();
+}
+function button(label, className, fn) {
+  const element = document.createElement("button");
+  element.textContent = label;
+  element.className = className;
+  if (label === "Save \u2193" || label === "Delete") {
+    element.setAttribute("aria-label", label);
+    element.title = label === "Delete" ? "Delete file" : "Save file";
+    element.classList.add("icon-button");
+    element.innerHTML = label === "Delete" ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></svg>';
+  }
+  element.addEventListener("click", () => run(fn));
+  return element;
+}
+function download(data, name, type) {
+  const url = URL.createObjectURL(new File([data], name, { type: type || "application/octet-stream" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name.replace(/[\x00-\x1f<>:"/\\|?*]/g, "_");
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 6e4);
+}
+function renderFileList() {
+  const list = isPC ? files : phoneFiles;
+  $("library-panel").hidden = list.length === 0 || !isPC && !phoneRecoveryOpen;
+  $("phone-recovery").hidden = isPC || list.length === 0;
+  $("phone-recovery").setAttribute("aria-expanded", String(phoneRecoveryOpen && list.length > 0));
+  $("phone-recovery").textContent = phoneRecoveryOpen ? "Hide received files" : "Download didn\u2019t start? Save again";
+  $("file-count").textContent = `${list.length} ${list.length === 1 ? "file" : "files"}`;
+  $("empty").hidden = list.length > 0;
+  $("file-list").replaceChildren();
+  for (const [index, file] of list.entries()) {
+    const row = document.createElement("li"), icon = document.createElement("span"), info = document.createElement("div"), name = document.createElement("strong"), detail = document.createElement("span"), actions = document.createElement("div");
+    const meta = document.createElement("div");
+    meta.className = "file-meta";
+    meta.append(icon);
+    icon.className = "file-icon";
+    icon.textContent = file.name.includes(".") ? file.name.split(".").pop().slice(0, 4) : "FILE";
+    info.className = "file-info";
+    name.textContent = file.name;
+    name.title = file.name;
+    detail.textContent = `${bytes(file.size)} \xB7 ${file.direct ? "Original file \xB7 no extra copy" : isPC ? "Saved in PocketDrop" : "Ready to save"}`;
+    info.append(name, detail);
+    actions.className = "file-actions";
+    if (!file.direct) actions.append(button("Save \u2193", "secondary", async () => {
+      if (isPC) {
+        await sessionCommand("save", { id: file.id });
+        return;
+      }
+      await saveOnPhone(file);
+      notice("Download started. Check Files / Downloads before deleting this file.");
+    }));
+    if (isPC) {
+      const send = button(deviceMode === "pc" ? "To PC \u2197" : "To phone \u2197", "text-button", async () => {
+        if (!transfer) throw new Error("Connect your device first");
+        if (file.direct) {
+          const handle = await sourceHandle(library, file.id);
+          if (!handle || await handle.requestPermission({ mode: "read" }) !== "granted") throw new Error("Allow access to the original file before sending.");
+        }
+        await sessionCommand("send", { id: file.id });
+      });
+      send.disabled = !transfer || desktop.sending;
+      send.title = !transfer ? "Connect your device first" : desktop.sending ? "A file is already being sent" : deviceMode === "pc" ? "Send to the other PC folder" : "Send to phone";
+      meta.append(send);
+    } else {
+      const send = button("To PC \u2197", "text-button", async () => {
+        if (!transfer) throw new Error("Connect to your PC first");
+        const destination = folders[0]?.id || "direct";
+        const savedFolder = await transfer.sendFile(
+          file.stored ? await library.source(file.id) : new File([file.data], file.name, { type: file.type }),
+          destination,
+          (loaded, total) => progress("Sending " + file.name, loaded, total)
+        );
+        uploaded(savedFolder || folders.find((folder) => folder.id === destination)?.name || "All files");
+      });
+      send.disabled = !transfer;
+      send.title = transfer ? "Send to selected PC folder" : "Connect to PC first";
+      meta.append(send);
+    }
+    actions.append(button("Delete", "danger", async () => {
+      if (file.direct) {
+        if (!confirm(`Remove \u201C${file.name}\u201D from the queue? Your original file will stay on your PC.`)) return;
+        await removeSource(library, file.id);
+        await refresh();
+        return;
+      }
+      if (!confirm(`Delete \u201C${file.name}\u201D ${isPC ? "from your PC library" : "from this phone page"}? Downloaded copies will not be removed.`)) return;
+      if (isPC) {
+        await library.deleteFile(file.id);
+        await refresh();
+      } else {
+        if (phoneSaveJobs.has(file.id)) throw new Error("Wait for this file to finish preparing.");
+        if (file.stored) {
+          if (phoneExports.has(file.id)) URL.revokeObjectURL(phoneExports.get(file.id));
+          phoneExports.delete(file.id);
+          await library.removeExport(file.id);
+          await library.deleteFile(file.id);
+        }
+        phoneFiles.splice(phoneFiles.findIndex((f) => f.id === file.id), 1);
+        renderFileList();
+      }
+    }));
+    const serial = document.createElement("span");
+    serial.className = "file-number";
+    serial.textContent = String(index + 1);
+    serial.setAttribute("aria-label", "File " + (index + 1));
+    if (isPC && desktop.saving?.includes(file.id)) {
+      detail.textContent = "Saving\u2026 keep Chrome open";
+      for (const control of [...actions.children, ...meta.querySelectorAll("button")]) control.disabled = true;
+    }
+    if (isPC && desktop.sending || !isPC && phoneSaveJobs.has(file.id)) {
+      for (const control of actions.children) control.disabled = true;
+    }
+    row.append(serial, info, meta, actions);
+    $("file-list").append(row);
+  }
+}
+var phoneSaveJobs = /* @__PURE__ */ new Map();
+async function saveOnPhone(file) {
+  if (!file.stored) {
+    download(file.data, file.name, file.type);
+    return;
+  }
+  if (phoneSaveJobs.has(file.id)) return phoneSaveJobs.get(file.id);
+  const job = (async () => {
+    let url = phoneExports.get(file.id);
+    if (!url) {
+      const result = await library.exportFile(file.id, file.id);
+      url = result.url;
+      phoneExports.set(file.id, url);
+    }
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = file.name;
+    document.body.append(a);
+    a.click();
+    a.remove();
+  })();
+  phoneSaveJobs.set(file.id, job);
+  renderFileList();
+  try {
+    await job;
+  } finally {
+    phoneSaveJobs.delete(file.id);
+    renderFileList();
+  }
+}
+function receivedOnPhone(file) {
+  phoneFiles.unshift(file);
+  renderFileList();
+  setTimeout(() => {
+    void saveOnPhone(file).catch(() => notice("Automatic save unavailable. Tap \u201CDownload didn\u2019t start? Save again\u201D to save your file."));
+  }, 0);
+  return PHONE_RECEIPT;
+}
+$("phone-recovery").addEventListener("click", () => {
+  phoneRecoveryOpen = !phoneRecoveryOpen;
+  renderFileList();
+});
+function createConnection() {
+  connection?.close();
+  if (pairing.pro && (!phoneResume || phoneResume.disposed)) phoneResume = new ResumeState();
+  const created = new Connection({
+    ...phoneResume ? { resumeState: phoneResume, maxFileSize: PRO_MAX_FILE } : {},
+    onState: state,
+    onError: (error) => notice(error.message),
+    onReady: (session, code) => {
+      transfer = session;
+      $("safety-code").textContent = code;
+      $("paired").hidden = false;
+      renderFileList();
+    },
+    onFolders: (list) => {
+      folders = list;
+      fillDestinations(list);
+      renderFileList();
+    },
+    onProgress: (event) => {
+      if (event.complete || event.failed) {
+        if (!busy) $("progress-area").hidden = true;
+      } else if (event.cancelled) {
+        if (!busy) $("progress-area").hidden = true;
+        notice("Incoming transfer cancelled. Nothing was saved.");
+      } else progress("Receiving " + event.name, event.loaded, event.total);
+    },
+    onReceive: async (metadata2) => {
+      if (proMode && receiveDirectory) {
+        const dir = await requireDirectory(library);
+        const sink2 = await beginDirectFile(dir, metadata2, { record: (job) => library.tx(["keys"], (tx) => tx.objectStore("keys").put(job)), clear: (id) => library.tx(["keys"], (tx) => tx.objectStore("keys").delete(id)) }, PRO_MAX_FILE);
+        return { write: sink2.write, abort: sink2.abort, commit: async () => {
+          await sink2.commit();
+          $("transfer-result").textContent = `Saved to phone folder "${dir.name}"`;
+          $("transfer-result").hidden = false;
+          clearTimeout(uploadTimer);
+          uploadTimer = setTimeout(() => {
+            $("transfer-result").hidden = true;
+          }, 12e4);
+          return dir.name;
+        } };
+      }
+      if (metadata2.size > MAX_FILE) throw new Error("Choose a receiving folder on the phone first. Large downloads require a browser with direct folder access.");
+      const sink = await library.begin(metadata2);
+      return { write: sink.write, abort: sink.abort, commit: async () => {
+        const id = await sink.commit();
+        return receivedOnPhone({ id, name: metadata2.name, type: metadata2.type, size: metadata2.size, stored: true });
+      } };
+    },
+    onFile: async (data, metadata2) => {
+      const file = new File([data], metadata2.name, { type: metadata2.type || "application/octet-stream" });
+      const id = await library.saveFile(file);
+      return receivedOnPhone({ id, name: file.name, type: file.type, size: file.size, stored: true });
+    }
+  });
+  connection = created;
+  return created;
+}
+async function showDirectoryStatus() {
+  const row = await library.get("keys", "receive-directory");
+  receiveDirectory = row?.handle;
+  $("directory-name").classList.remove("folder-chosen");
+  if (!row?.handle) {
+    $("directory-name").textContent = "Choose a folder before connecting";
+    $("choose-directory").textContent = isPC ? "Choose PC folder" : "Choose phone folder";
+    return;
+  }
+  const allowed = await row.handle.queryPermission({ mode: "readwrite" }) === "granted";
+  $("directory-name").textContent = allowed ? `${row.handle.name} folder chosen` : `${row.handle.name} \u2014 allow access again`;
+  $("directory-name").classList.toggle("folder-chosen", allowed);
+  $("choose-directory").textContent = allowed ? isPC ? "Change PC folder" : "Change phone folder" : "Allow folder access";
+}
+$("choose-directory").addEventListener("click", async () => {
+  if (!isPC && !proMode || desktop.receiving || phoneResume?.incoming) return;
+  if (!window.showDirectoryPicker) {
+    notice("This browser cannot save large files directly to a folder. Use a supported Chrome Android browser. You can still send large files to your PC.");
+    return;
+  }
+  try {
+    if (receiveDirectory && await receiveDirectory.queryPermission({ mode: "readwrite" }) !== "granted") {
+      if (await receiveDirectory.requestPermission({ mode: "readwrite" }) !== "granted") throw new Error("Folder access was not allowed. No file was saved.");
+      await showDirectoryStatus();
+      if (isPC) await sessionCommand("directory");
+      $("notice").hidden = true;
+      return;
+    }
+    const handle = await window.showDirectoryPicker({ id: "pocketdrop-receive", mode: "readwrite", startIn: "downloads" });
+    await library.tx(["keys"], (tx) => tx.objectStore("keys").put({ id: "receive-directory", handle }));
+    await showDirectoryStatus();
+    if (isPC) await sessionCommand("directory");
+    $("notice").hidden = true;
+  } catch (error) {
+    if (error.name !== "AbortError") notice(error.message);
+  }
+});
+for (const mode of ["phone", "pc"]) $("mode-" + mode).addEventListener("click", () => {
+  if (!isPC || desktop.active) return;
+  deviceMode = mode;
+  if (mode === "pc" && !LICENSE_CONFIG.enabled) {
+    proMode = true;
+    localStorage.setItem("pro-test", "true");
+  }
+  renderPro();
+  renderDeviceMode();
+  renderFileList();
+});
+async function startPC(data) {
+  if (receiveDirectory && await receiveDirectory.requestPermission({ mode: "readwrite" }) !== "granted") throw new Error("Allow access to your chosen PC folder before connecting.");
+  await requireDirectory(library);
+  await showDirectoryStatus();
+  await sessionCommand("connect", { mode: "pc", pro: true, ...data });
+  $("pc-link-input").value = "";
+}
+$("create-pc-link").addEventListener("click", () => run(() => startPC({})));
+$("join-pc").addEventListener("click", () => run(() => startPC({ link: $("pc-link-input").value })));
+$("copy-pc-link").addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText($("pc-link-output").value);
+    $("copy-pc-link").textContent = "Copied";
+    setTimeout(() => {
+      $("copy-pc-link").textContent = "Copy connection code";
+    }, 2e3);
+  } catch {
+    $("pc-link-output").focus();
+    $("pc-link-output").select();
+    notice("Press Ctrl+C to copy the selected private code.");
+  }
+});
+$("connect").addEventListener("click", () => run(async () => {
+  if (isPC) {
+    if (receiveDirectory && await receiveDirectory.requestPermission({ mode: "readwrite" }) !== "granted") throw new Error("Allow access to your chosen PC folder before connecting.");
+    await requireDirectory(library);
+    await showDirectoryStatus();
+    await sessionCommand("connect", { pro: proMode, network: proMode ? "direct" : "local" });
+  }
+}));
+$("join").addEventListener("click", () => run(async () => {
+  if (!pairing) throw new Error("Open PocketDrop on your PC and scan its QR code.");
+  if (pairing.pro) await showDirectoryStatus();
+  if (pairing.pro && !phoneResume) phoneResume = new ResumeState();
+  const created = createConnection();
+  $("join").disabled = true;
+  $("connection-status").textContent = "Connecting to your PC\u2026";
+  $("disconnect").hidden = false;
+  try {
+    await created.start("phone", pairing);
+  } catch (error) {
+    created.close();
+    throw error;
+  }
+}));
+$("disconnect").addEventListener("click", async () => {
+  if ((transfer?.outgoing || transfer?.incoming) && !confirm("Disconnect and cancel the current transfer?")) return;
+  if (isPC) void sessionCommand("disconnect").catch((error) => notice(error.message));
+  else {
+    forgetPhonePairing();
+    pairing = null;
+    await transfer?.send({ t: "disconnect" }).catch(() => {
+    });
+    connection?.close();
+  }
+});
+$("cancel").addEventListener("click", () => {
+  cancelBatch = true;
+  if (isPC) void sessionCommand("cancel").catch((error) => notice(error.message));
+  else {
+    if (phoneResume && !transfer) {
+      connection?.close();
+      void phoneResume.clear();
+    } else transfer?.cancel();
+  }
+});
+async function addFiles(selected) {
+  let count = 0, savedFolder;
+  const destination = isPC ? "inbox" : $("destination").value;
+  for (const file of selected) {
+    if (cancelBatch) break;
+    if (file.size > (proMode ? PRO_MAX_FILE : MAX_FILE)) throw new Error(`${file.name} exceeds ${proMode ? "10 GB" : "500 MB"}. ${count} earlier file(s) completed.`);
+    if (isPC && proMode) throw new Error("Use Choose files to select the original file for Pro transfers.");
+    if (isPC) {
+      const label = "Adding " + file.name + " \u2014 keep popup open";
+      progress(label, 0, file.size);
+      await navigator.locks.request("pocketdrop-local-import", () => library.saveFile(file, destination, (loaded, total) => progress(label, loaded, total)));
+    } else {
+      if (!transfer) throw new Error("Connect to your PC first");
+      progress("Preparing " + file.name, 0, file.size);
+      savedFolder = proMode ? await sendPhonePro(file) : await transfer.sendFile(file, destination, (loaded, total) => progress("Sending " + file.name, loaded, total));
+    }
+    count++;
+  }
+  if (isPC) await refresh();
+  if (count) uploaded(savedFolder || (isPC ? "All files" : destination === "inbox" ? "All files" : $("destination").selectedOptions[0]?.textContent || "the selected PC folder"));
+}
+async function sendPhonePro(file) {
+  const owner = connection, source = fileSource(file, crypto.randomUUID());
+  while (true) {
+    if (cancelBatch || owner.closed || owner !== connection) throw new Error("Transfer stopped. Your original file is unchanged.");
+    const current = transfer;
+    if (!current || current.closed) {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      continue;
+    }
+    try {
+      return await current.sendFile(source, "direct", (loaded, total) => progress("Sending " + file.name, loaded, total));
+    } catch (error) {
+      if (error.permanent || cancelBatch || owner.closed) throw error;
+      current.close();
+      owner.scheduleReconnect();
+    }
+  }
+}
+async function queueHandles(handles) {
+  for (const handle of handles) {
+    await addSource(library, handle);
+  }
+  await refresh();
+  uploaded("");
+}
+$("drop").addEventListener("click", (event) => {
+  if (!isPC || !proMode) return;
+  event.preventDefault();
+  void run(async () => {
+    if (!window.showOpenFilePicker) throw new Error("Direct file selection needs desktop Chrome.");
+    try {
+      const handles = await window.showOpenFilePicker({ multiple: true });
+      await queueHandles(handles);
+    } catch (error) {
+      if (error.name !== "AbortError") throw error;
+    }
+  });
+});
+$("file-input").addEventListener("change", (event) => {
+  const selected = [...event.target.files];
+  void run(() => addFiles(selected));
+});
+$("drop").addEventListener("dragover", (event) => {
+  event.preventDefault();
+  $("drop").classList.add("drag");
+});
+$("drop").addEventListener("dragleave", () => $("drop").classList.remove("drag"));
+$("drop").addEventListener("drop", (event) => {
+  event.preventDefault();
+  $("drop").classList.remove("drag");
+  if (isPC && proMode) {
+    const handles = [...event.dataTransfer.items].filter((item) => item.kind === "file").map((item) => item.getAsFileSystemHandle?.());
+    void run(async () => queueHandles(await Promise.all(handles)));
+  } else void run(() => addFiles([...event.dataTransfer.files]));
+});
+document.addEventListener("dragover", (event) => event.preventDefault());
+document.addEventListener("drop", (event) => event.preventDefault());
+window.addEventListener("beforeunload", (event) => {
+  if (busy || !isPC && (transfer?.incoming || transfer?.outgoing || phoneResume?.incoming)) {
+    event.preventDefault();
+    event.returnValue = "";
+  }
+});
+window.addEventListener("pagehide", () => {
+  if (!isPC) connection?.close();
+});
+var pairingStorageKey = "pocketdrop-tab-pairing";
+function forgetPhonePairing() {
+  try {
+    sessionStorage.removeItem(pairingStorageKey);
+  } catch {
+  }
+}
+function rememberPhonePairing(value) {
+  try {
+    sessionStorage.setItem(pairingStorageKey, value);
+  } catch {
+  }
+}
+function readPhonePairing() {
+  let next;
+  try {
+    const value = location.hash.slice(1);
+    next = parsePairing(value);
+    rememberPhonePairing(value);
+  } finally {
+    history.replaceState(null, "", location.pathname);
+  }
+  connection?.close();
+  pairing = next;
+  proMode = pairing.pro === true;
+  phoneResume = null;
+  renderPro();
+  $("join").hidden = false;
+  $("join").disabled = false;
+  $("notice").hidden = true;
+  state("Ready to connect");
+  if (pairing.network === "direct") notice("Page ready. Use the same Wi-Fi or switch to a different Wi-Fi network, then tap Connect to my PC. Keep this page open during transfers.");
+  else if (!busy) $("join").click();
+}
+window.addEventListener("hashchange", () => {
+  if (!isPC && location.hash) {
+    try {
+      readPhonePairing();
+    } catch (error) {
+      notice(error.message);
+    }
+  }
+});
+async function start() {
+  $("file-input").disabled = true;
+  await refreshLicence();
+  if (!crypto.subtle) throw new Error("Open the phone page over HTTPS. Encryption is required.");
+  if (isPC) {
+    library = await new Library().init();
+    await navigator.locks.request("pocketdrop-local-import", () => library.recoverPending("local"));
+    await refresh();
+    await showDirectoryStatus();
+    await sessionCommand("snapshot");
+    if (!desktop.upload && !desktop.progress) {
+      const row = await library.get("keys", "last-receive");
+      if (row?.receipt) uploaded(row.receipt.folder, row.receipt.completedAt, true);
+    }
+    if (desktop.destination) $("destination").value = desktop.destination;
+  } else {
+    library = await new Library("pocketdrop-phone-v1").init();
+    for (const file of await library.files()) phoneFiles.push({ ...file, stored: true });
+    document.body.classList.add("phone");
+    $("privacy-summary").textContent = "Encrypted transfers \xB7 Save files before closing";
+    $("phone-pair").hidden = false;
+    $("title").textContent = "Send to your PC";
+    $("intro").textContent = "Files save to the folder selected on your PC.";
+    $("pair-heading").textContent = "Connect to your computer";
+    $("send-heading").textContent = "Send to PC";
+    $("destination-label").hidden = true;
+    $("destination").hidden = true;
+    $("destination").replaceChildren();
+    $("drop-title").textContent = "Photos, PDFs, and more";
+    $("folder-title").textContent = "From your PC";
+    $("storage-warning").textContent = "Received files start a phone download automatically. Your browser may ask you to confirm. A recovery copy stays in this browser until you delete it. Check Downloads after saving, then delete that copy. On iPhone, use Files or the system share menu to save images to Photos.";
+    if (location.hash) readPhonePairing();
+    else {
+      let saved;
+      try {
+        saved = sessionStorage.getItem(pairingStorageKey);
+      } catch {
+      }
+      if (saved) {
+        try {
+          pairing = parsePairing(saved);
+          proMode = pairing.pro === true;
+          renderPro();
+          $("join").click();
+        } catch {
+          forgetPhonePairing();
+          pairing = null;
+        }
+      }
+      if (!pairing) {
+        $("join").hidden = true;
+        state("Scan the QR code on your PC");
+      }
+    }
+    if (proMode) {
+      await recoverDirect(library);
+      await showDirectoryStatus();
+    }
+    renderFileList();
+  }
+  renderPro();
+}
+start().then(() => {
+  $("file-input").disabled = false;
+}).catch((error) => notice(error.message));
