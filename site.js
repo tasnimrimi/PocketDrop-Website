@@ -50,14 +50,16 @@ checkoutForm.addEventListener('submit', async event => {
   const email = receiptEmail.value, generation = dialogGeneration;
   checkoutLoading = true; checkoutButton.disabled = true; checkoutButton.textContent = 'Opening secure checkout…'; checkoutNotice('');
   try {
+    const customData = await window.PocketDropLicense.customData();
     const paddle = await loadCardCheckout();
     // Closing the email dialog cancels a pending launch. No surprise checkout later.
     if (!dialog.open || generation !== dialogGeneration) return;
     if (!paddleReady) {
       if (config.environment === 'sandbox') paddle.Environment.set('sandbox');
-      paddle.Initialize({ token: config.clientToken }); paddleReady = true;
+      paddle.Initialize({ token: config.clientToken, eventCallback: event => window.PocketDropLicense.event(event) }); paddleReady = true;
     }
     paddle.Checkout.open({
+      customData,
       items: [{ priceId: config.priceId, quantity: 1 }],
       customer: { email },
       settings: { displayMode: 'overlay', theme: 'light', locale: 'en', allowedPaymentMethods: ['card'], showAddDiscounts: false, allowLogout: true }
