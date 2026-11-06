@@ -21,8 +21,10 @@
 .pd-activation :focus-visible{outline:2px solid #235bea;outline-offset:3px}
 .pd-key-feedback{font-size:12px;line-height:1.5;color:#286144;margin:8px 0 0}.pd-key-feedback:empty{display:none}
 .pd-recovery details{border:0;margin:16px 0 0;padding:0}
-.pd-recovery summary{font-size:13px;font-weight:500;line-height:1.5;cursor:pointer;color:#56657b;padding:0;display:list-item}
-.pd-recovery summary::after{display:none}
+.pd-recovery summary{font-size:13px;font-weight:600;line-height:1.5;cursor:pointer;color:#235bea;padding:0;display:inline-flex;align-items:center;justify-content:flex-start;gap:9px;list-style:none}
+.pd-recovery summary::-webkit-details-marker{display:none}
+.pd-recovery summary::after{content:"";display:block;width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin-top:-4px;transition:transform .18s}
+.pd-recovery details[open] summary::after{content:"";transform:rotate(225deg);margin-top:4px}
 .pd-recovery details p{font-size:13px;line-height:1.7;color:#56657b;margin:10px 0 0}
 .pd-activation-note{font-size:13px;color:#6b7890;margin:20px 0 0}
 @media(max-width:520px){.pd-activation-card{padding:26px 18px;border-radius:20px}.pd-recovery{padding:14px}.pd-recovery-heading{align-items:flex-start}.pd-recovery-controls{flex-wrap:wrap}.pd-recovery-controls input{min-width:100px}.pd-key-copy{width:100%}.pd-activation{padding-block:24px 40px}}

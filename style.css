@@ -159,3 +159,10 @@ header{height:76px}
 #pro-dialog .checkout-privacy,#pro-dialog .checkout-preview{font-size:11px;line-height:1.6;text-align:center;margin:16px 0 0}
 #pro-dialog .checkout-preview{font-weight:600;color:#52627a}
 @media(max-width:480px){#pro-dialog{padding:28px 22px}#pro-dialog h2{font-size:27px}}
+
+/* Free and Pro capability comparison. */
+.capabilities-heading{display:grid;grid-template-columns:1fr 1fr;gap:70px;align-items:end;margin-bottom:52px}
+.capabilities-heading .eyebrow{font:500 12px/1.5 'DM Sans',sans-serif;letter-spacing:2.5px;text-transform:uppercase;color:#68788e;margin-bottom:22px}
+.capabilities-heading h2{font-size:clamp(36px,4.2vw,52px)}
+.capabilities{padding-top:105px;padding-bottom:105px}.capabilities-heading>p{font-size:15px;color:#657086;max-width:500px;margin:0}.capability-table{border:1px solid #d7dfeb;border-radius:18px;overflow:hidden;background:#fff}.capability-row{display:grid;grid-template-columns:minmax(0,2fr) minmax(110px,.7fr) minmax(110px,.7fr);align-items:center;min-height:59px;border-top:1px solid #e4e9f1}.capability-row:first-child{border-top:0}.capability-row>*{padding:14px 22px}.capability-row>span{font-size:14px}.capability-row>b,.capability-row>strong{border-left:1px solid #e4e9f1;font-size:13px;text-align:center;color:#2454c9}.capability-head{background:#111b30;color:#fff;min-height:66px}.capability-head>span,.capability-head>strong{font:700 12px/1.3 'DM Sans',sans-serif;letter-spacing:1px;text-transform:uppercase;color:#fff}.capability-head>strong{border-color:#33405b}.capability-row.pro-only{background:#f4f7ff}.capability-row.pro-only>b:last-child{font-weight:800}.capability-footnote{font-size:12px;line-height:1.7;color:#6d788b;margin:18px 2px 0}
+@media(max-width:760px){.capabilities{padding-top:68px;padding-bottom:68px}.capabilities-heading{grid-template-columns:1fr;gap:24px;margin-bottom:34px}.capability-row{grid-template-columns:minmax(0,1.5fr) minmax(70px,.55fr) minmax(70px,.55fr)}.capability-row>*{padding:12px 10px}.capability-row>span{font-size:12px}.capability-row>b,.capability-row>strong{font-size:11px}.capability-head>span,.capability-head>strong{font-size:9px}}
