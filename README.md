@@ -51,12 +51,10 @@ Files sent from your phone save directly into the computer folder you selected. 
 - Everything in the Free plan
 - Files up to 10 GB each
 - Direct peer-to-peer (P2P) transfers between two computers
-- Connections across different Wi-Fi networks where direct WebRTC is available
+- Connect devices across different Wi-Fi networks, with mobile-network support coming soon
 - Resume interrupted transfers during the same active pairing
 - Private recovery key for restoring access
 - One-time payment with no monthly subscription
-
-Mobile-network support is planned for a future update.
 
 ## Privacy by design
 
