@@ -60,8 +60,6 @@ Mobile-network support is planned for a future update.
 
 ## Privacy by design
 
-PocketDrop uses encrypted WebRTC connections so file contents travel directly between the paired devices. PeerJS and Google STUN help establish the connection, but PocketDrop does not upload transferred files to its website, payment service, or licensing service.
-
 Some restricted workplace, school, guest, VPN, or carrier networks may block direct connections. Keep Chrome running and leave the phone transfer page open until the transfer finishes.
 
 - [Privacy Policy](https://tasnimrimi.github.io/PocketDrop-Website/privacy.html)
