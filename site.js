@@ -62,7 +62,7 @@ checkoutForm.addEventListener('submit', async event => {
       customData,
       items: [{ priceId: config.priceId, quantity: 1 }],
       customer: { email },
-      settings: { displayMode: 'overlay', theme: 'light', locale: 'en', allowedPaymentMethods: ['card'], showAddDiscounts: false, allowLogout: true }
+      settings: { displayMode: 'overlay', theme: 'light', locale: 'en', allowedPaymentMethods: ['card'], showAddDiscounts: true, allowLogout: true }
     });
     dialog.close();
     // A checkout event/redirect must never grant Pro. Fulfillment must verify
